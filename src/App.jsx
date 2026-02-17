@@ -8,7 +8,7 @@ const loadHtml2Canvas = () => {
       resolve(window.html2canvas);
       return;
     }
-    
+
     const script = document.createElement('script');
     script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
     script.onload = () => resolve(window.html2canvas);
@@ -44,12 +44,12 @@ const MTGMonteCarloAnalyzer = () => {
   const [disabledArtifacts, setDisabledArtifacts] = useState(new Set());
   const [includeExploration, setIncludeExploration] = useState(true);
   const [disabledExploration, setDisabledExploration] = useState(new Set());
-  
-  
+
+
   const [simulationResults, setSimulationResults] = useState(null);
   const [isSimulating, setIsSimulating] = useState(false);
   const [error, setError] = useState('');
-  
+
   // Settings
   const [iterations, setIterations] = useState(10000);
   const [turns, setTurns] = useState(7);
@@ -71,30 +71,30 @@ const MTGMonteCarloAnalyzer = () => {
     try {
       const text = await file.text();
       const data = JSON.parse(text);
-      
+
       if (!Array.isArray(data)) {
         setError('Invalid JSON format. Expected an array of card objects.');
         return;
       }
 
       setCardsDatabase(data);
-      
+
       // Build lookup map - skip tokens
       const lookupMap = new Map();
       let skippedTokens = 0;
-      
+
       data.forEach(card => {
         // Skip tokens - we only want real playable cards
-        if (card.layout === 'token' || 
-            card.layout === 'double_faced_token' || 
-            card.set_type === 'token' || 
-            card.type_line?.includes('Token')) {
+        if (card.layout === 'token' ||
+          card.layout === 'double_faced_token' ||
+          card.set_type === 'token' ||
+          card.type_line?.includes('Token')) {
           skippedTokens++;
           return;
         }
-        
+
         const name = card.name.toLowerCase();
-        
+
         // If a card with this name already exists, prefer the one with higher CMC
         // (real cards over tokens if somehow a token slipped through)
         if (lookupMap.has(name)) {
@@ -106,9 +106,9 @@ const MTGMonteCarloAnalyzer = () => {
           lookupMap.set(name, card);
         }
       });
-      
+
       setCardLookupMap(lookupMap);
-      
+
       setError('');
       console.log(`✓ Loaded ${data.length} cards from uploaded file (${skippedTokens} tokens filtered out)`);
     } catch (err) {
@@ -139,7 +139,7 @@ const MTGMonteCarloAnalyzer = () => {
         const response = await fetch(`https://api.scryfall.com/cards/named?fuzzy=${encodeURIComponent(cardName)}`);
         if (response.ok) {
           const data = await response.json();
-          
+
           // DEBUG: Log what we got from Scryfall
           if (data.cmc === 0 && data.name) {
             console.log(`🔍 Scryfall returned for "${cardName}":`, {
@@ -151,12 +151,12 @@ const MTGMonteCarloAnalyzer = () => {
               mana_cost: data.mana_cost
             });
           }
-          
+
           // Skip tokens - we only want real playable cards
-          if (data.layout === 'token' || data.layout === 'double_faced_token' || 
-              data.set_type === 'token' || data.type_line?.includes('Token')) {
+          if (data.layout === 'token' || data.layout === 'double_faced_token' ||
+            data.set_type === 'token' || data.type_line?.includes('Token')) {
             console.warn(`⚠️ Skipping token for: ${cardName}`);
-            
+
             // Try searching for the non-token version
             const searchResponse = await fetch(`https://api.scryfall.com/cards/search?q=!"${encodeURIComponent(cardName)}"+-is:token&unique=cards&order=released`);
             if (searchResponse.ok) {
@@ -170,7 +170,7 @@ const MTGMonteCarloAnalyzer = () => {
             }
             return null; // No non-token version found
           }
-          
+
           cardLookupMap.set(searchName, data);
           return data;
         }
@@ -246,74 +246,74 @@ const MTGMonteCarloAnalyzer = () => {
     // Tri-Lands (Shards/Khans)
     'seaside citadel', 'crumbling necropolis', 'arcane sanctum', 'savage lands', 'jungle shrine',
     'frontier bivouac', 'mystic monastery', 'nomad outpost', 'sandsteppe citadel', 'opulent palace',
-    
+
     // Tri-Lands (Ikoria Triomes - have basic land types, can be fetched)
     'savai triome', 'raugrin triome', 'ketria triome', 'indatha triome', 'zagoth triome',
-    
+
     // Tri-Lands (Streets of New Capenna)
     'raffine\'s tower', 'spara\'s headquarters', 'ziatora\'s proving ground', 'jetmir\'s garden', 'xander\'s lounge',
-    
+
     // Depletion Lands (Mercadian Masques)
     'saprazzan skerry', 'remote farm', 'rushwood grove', 'sandstone needle', 'hickory woodlot',
     'peat bog', 'everglades', 'timberline ridge', 'caldera lake', 'hollow trees',
-    
+
     // Gain Lands (Core Set)
     'tranquil cove', 'dismal backwater', 'bloodfell caves', 'rugged highlands', 'blossoming sands',
     'scoured barrens', 'swiftwater cliffs', 'jungle hollow', 'wind-scarred crag', 'thornwood falls',
-    
+
     // Coastal Lands
     'coastal tower', 'salt marsh', 'urborg volcano', 'shivan oasis', 'elfhame palace',
-    
+
     // Wedge Tap Lands
     'sandsteppe citadel', 'mystic monastery', 'opulent palace', 'nomad outpost', 'frontier bivouac',
-    
+
     // Bicycle Lands (Amonkhet)
     'irrigated farmland', 'fetid pools', 'canyon slough', 'sheltered thicket', 'scattered groves',
-    
+
     // Temples (Theros)
     'temple of enlightenment', 'temple of deceit', 'temple of malice', 'temple of abandon', 'temple of plenty',
     'temple of silence', 'temple of epiphany', 'temple of malady', 'temple of triumph', 'temple of mystery',
-    
+
     // Surveil Lands (Murders at Karlov Manor - have basic land types)
     'meticulous archive', 'undercity sewers', 'raucous theater', 'commercial district', 'lush portico',
     'shadowy backstreet', 'thundering falls', 'underground mortuary', 'elegant parlor', 'hedge maze',
-    
+
     // Utility Lands that enter tapped
     'path of ancestry',  // Produces any color, scry 1 when creature ETB
-    
+
     // Utility Lands (enter tapped)
     'path of ancestry',  // Commander staple, produces any color
-    
+
     // Refuges
     'sejiri refuge', 'jwar isle refuge', 'akoum refuge', 'kazandu refuge', 'graypelt refuge',
-    
+
     // Guildgates
     'azorius guildgate', 'dimir guildgate', 'rakdos guildgate', 'gruul guildgate', 'selesnya guildgate',
     'orzhov guildgate', 'izzet guildgate', 'golgari guildgate', 'boros guildgate', 'simic guildgate',
-    
+
     // Bounce Lands (Ravnica Karoos) - Enter tapped AND bounce
     'azorius chancery', 'dimir aqueduct', 'rakdos carnarium', 'gruul turf', 'selesnya sanctuary',
     'orzhov basilica', 'izzet boilerworks', 'golgari rot farm', 'boros garrison', 'simic growth chamber',
-    
+
     // Slow Lands (Midnight Hunt/Crimson Vow)
     'deserted beach', 'haunted ridge', 'overgrown farmland', 'rockfall vale', 'shipwreck marsh',
-    
+
     // Tango/Battle Lands (Battle for Zendikar) - Usually tapped unless 2+ basics
     'prairie stream', 'sunken hollow', 'smoldering marsh', 'cinder glade', 'canopy vista',
-    
+
     // Pathway Lands (back side enters tapped)
     // Note: Front side enters untapped, back side tapped - handled separately
-    
+
     // Snow Tap Lands
     'arctic flats', 'boreal shelf', 'frost marsh', 'highland weald', 'tresserhorn sinks',
-    
+
     // Various Other Tap Lands
     'crystal grotto', 'survivor\'s encampment', 'holdout settlement', 'painted bluffs', 'shimmerdrift vale',
     'gateway plaza', 'rupture spire', 'transguild promenade', 'gond gate', 'baldur\'s gate',
-    
+
     // Thriving Lands
     'thriving bluff', 'thriving grove', 'thriving heath', 'thriving isle', 'thriving moor',
-    
+
     // Special fetches that enter tapped
     'myriad landscape'
   ]);
@@ -437,25 +437,25 @@ const MTGMonteCarloAnalyzer = () => {
     // They are regular cards that transform, so the front face determines the type
     if (data.card_faces && data.card_faces.length > 0) {
       const layout = data.layout?.toLowerCase() || '';
-      
+
       // Only treat as MDFC if it's actually a modal double-faced card
       // Layouts: 'modal_dfc', 'transform', 'double_faced_token', etc.
       if (layout === 'modal_dfc') {
         frontFace = data.card_faces[0];
         const backFace = data.card_faces[1];
         isMDFC = true;
-        
+
         // Check both faces
         const frontIsLand = frontFace.type_line?.toLowerCase().includes('land');
         const backIsLand = backFace.type_line?.toLowerCase().includes('land');
-        
+
         // If EITHER side is a land, it can be played as a land
         if (frontIsLand || backIsLand) {
           // For land side, use the land face
           const landFace = frontIsLand ? frontFace : backFace;
           return processLand(data, landFace, isMDFC);
         }
-        
+
         // If front is not a land, process as spell (even if back is land)
         // This allows MDFCs like Kazuul's Fury to be selected as key cards
         // The land will be processed separately above
@@ -476,7 +476,7 @@ const MTGMonteCarloAnalyzer = () => {
 
     // Check for mana production ability
     const hasManaTap = hasManaTapAbility(data.oracle_text || frontFace.oracle_text);
-    
+
     // Mana creature check (includes artifact creatures)
     const cardName = data.name.toLowerCase();
     const isCreature = (data.type_line || frontFace.type_line)?.includes('Creature');
@@ -507,7 +507,7 @@ const MTGMonteCarloAnalyzer = () => {
   const processLand = (data, face, isMDFC) => {
     const name = data.name.toLowerCase();
     const oracleText = face.oracle_text || '';
-    
+
     // CRITICAL: Exclude transform cards that have land on back side
     // These cannot be played as lands directly (e.g., Profane Procession, Legion's Landing)
     if (data.layout === 'transform' && data.card_faces && data.card_faces.length > 0) {
@@ -515,19 +515,19 @@ const MTGMonteCarloAnalyzer = () => {
       const backFace = data.card_faces[1];
       const frontIsLand = frontFace.type_line?.toLowerCase().includes('land');
       const backIsLand = backFace.type_line?.toLowerCase().includes('land');
-      
+
       // If front is NOT a land but back is, this is a transform card
       // that transforms INTO a land - cannot be played as land
       if (!frontIsLand && backIsLand) {
         return null; // Return null to indicate this shouldn't be processed as a land
       }
     }
-    
+
     // Detect fetch land
-    const isFetch = KNOWN_FETCH_LANDS.has(name) || 
-                    (oracleText.includes('search your library') && 
-                     oracleText.includes('land card') && 
-                     oracleText.includes('battlefield'));
+    const isFetch = KNOWN_FETCH_LANDS.has(name) ||
+      (oracleText.includes('search your library') &&
+        oracleText.includes('land card') &&
+        oracleText.includes('battlefield'));
 
     let fetchType = null;
     let fetchColors = [];
@@ -536,14 +536,21 @@ const MTGMonteCarloAnalyzer = () => {
     let fetchesTwoLands = false;
     let fetchcost = 0;
     let fetchedLandEntersTapped = false; // Does the fetched land enter tapped?
-    
+    let entersTappedAlways = false; // Does the land itself enter tapped?
+    let isBounce = false;
+    let isReveal = false;
+    let isCheck = false;
+    let isFast = false;
+    let isBattleLand = false;
+    let isPathway = false;
+
     if (isFetch) {
       // Check for hideaway fetch (enters tapped, sacrifices itself, fetches basic)
       if (HIDEAWAY_LANDS.has(name)) {
         fetchType = 'hideaway';
         isHideawayFetch = true;
         fetchesOnlyBasics = true;
-        
+
         // Hideaway lands fetch basics of their color(s)
         // Parse from the card's mana production
         if (oracleText.includes('{T}: Add')) {
@@ -582,7 +589,7 @@ const MTGMonteCarloAnalyzer = () => {
         fetchesOnlyBasics = true;
         fetchcost = 1;
         fetchedLandEntersTapped = true; // Lands enter tapped
-        
+
         // Parse which basic types from oracle text
         const typeMatch = oracleText.match(/(Plains|Island|Swamp|Mountain|Forest)/g);
         if (typeMatch) {
@@ -593,13 +600,13 @@ const MTGMonteCarloAnalyzer = () => {
         }
       }
       // Landscape cycle (Modern Horizons 3): {1}, T, Sacrifice: Search for basic land of 2 specific types
-      else if ((name.includes('landscape') ) && 
-               name !== 'myriad landscape' && name !== 'warped landscape' && name !== 'blasted landscape') {
+      else if ((name.includes('landscape')) &&
+        name !== 'myriad landscape' && name !== 'warped landscape' && name !== 'blasted landscape') {
         fetchType = 'mana_cost';
         fetchesOnlyBasics = true;
         fetchcost = 1;
         fetchedLandEntersTapped = true; // Lands enter tapped
-        
+
         // Parse which basic types from oracle text
         const typeMatch = oracleText.match(/(Plains|Island|Swamp|Mountain|Forest)/g);
         if (typeMatch) {
@@ -614,7 +621,7 @@ const MTGMonteCarloAnalyzer = () => {
         fetchType = 'free_slow';
         fetchesOnlyBasics = true;
         fetchedLandEntersTapped = true; // These fetches put lands in tapped
-        
+
         // These can fetch any basic (all 5 colors)
         fetchColors = ['W', 'U', 'B', 'R', 'G'];
       }
@@ -655,21 +662,21 @@ const MTGMonteCarloAnalyzer = () => {
 
     // Detect if this is a basic land
     // Basic lands have the "Basic" supertype in their type_line
-    const isBasic = face.type_line?.includes('Basic') || 
-                    // Also check by name for common basics
-                    ['plains', 'island', 'swamp', 'mountain', 'forest', 'wastes'].includes(name);
+    const isBasic = face.type_line?.includes('Basic') ||
+      // Also check by name for common basics
+      ['plains', 'island', 'swamp', 'mountain', 'forest', 'wastes'].includes(name);
 
     // Extract mana production
     const produces = [];
-    
+
     // Special case: 5-color pain lands produce all 5 colors
     if (FIVE_COLOR_PAIN_LANDS.has(name)) {
       produces.push('W', 'U', 'B', 'R', 'G');
-    } 
+    }
     // Special case: Command Tower and Path of Ancestry produce all 5 colors
     else if (name === 'command tower' || name === 'path of ancestry') {
       produces.push('W', 'U', 'B', 'R', 'G');
-    } 
+    }
     else if (oracleText.includes('{T}: Add')) {
       const manaSymbols = oracleText.match(/\{[WUBRGC]\}/g);
       if (manaSymbols) {
@@ -678,39 +685,38 @@ const MTGMonteCarloAnalyzer = () => {
           if (!produces.includes(color)) produces.push(color);
         });
       }
-      
+
       if (oracleText.includes('any color') || oracleText.includes('mana of any color')) {
         produces.push('W', 'U', 'B', 'R', 'G');
       }
     }
-    
+
     // Special case: Ancient Tomb produces {C}{C}
     // City of Traitors produces {C}{C}
     const manaAmount = (name === 'ancient tomb' || name === 'city of traitors') ? 2 : 1;
 
     // Determine if enters tapped using comprehensive lists
-    let entersTappedAlways = false;
-    let isBounce = false;
-    let isReveal = false;
-    let isCheck = false;
-    let isFast = false;
-    let isBattleLand = false;
-    let isPathway = false;
-    
+    isBounce = false;
+    isReveal = false;
+    isCheck = false;
+    isFast = false;
+    isBattleLand = false;
+    isPathway = false;
+
     // Check hardcoded lists first (most reliable)
     // Determine if this land has internal logic (vs. pure oracle text parsing)
     let hasInternalLogic = false;
-    
+
     // Check if land is in any special set (has hardcoded logic)
-    if (FIVE_COLOR_PAIN_LANDS.has(name) || HIDEAWAY_LANDS.has(name) || KNOWN_FETCH_LANDS.has(name) ||  
-        CONDITIONAL_LIFE_LANDS.has(name) || BOUNCE_LANDS.has(name) ||
-        BATTLE_LANDS.has(name) || PATHWAY_LANDS.has(name) || CHECK_LANDS.has(name) ||
-        FAST_LANDS.has(name) || CROWD_LANDS.has(name) || ODYSSEY_FILTER_LANDS.has(name) ||
-        PAIN_LANDS.has(name) || name === 'starting town' || name === 'ancient tomb' ||
-        name === 'city of traitors') {
+    if (FIVE_COLOR_PAIN_LANDS.has(name) || HIDEAWAY_LANDS.has(name) || KNOWN_FETCH_LANDS.has(name) ||
+      CONDITIONAL_LIFE_LANDS.has(name) || BOUNCE_LANDS.has(name) ||
+      BATTLE_LANDS.has(name) || PATHWAY_LANDS.has(name) || CHECK_LANDS.has(name) ||
+      FAST_LANDS.has(name) || CROWD_LANDS.has(name) || ODYSSEY_FILTER_LANDS.has(name) ||
+      PAIN_LANDS.has(name) || name === 'starting town' || name === 'ancient tomb' ||
+      name === 'city of traitors') {
       hasInternalLogic = true;
     }
-    
+
     if (LANDS_ENTER_TAPPED_ALWAYS.has(name)) {
       entersTappedAlways = true;
     } else if (HIDEAWAY_LANDS.has(name)) {
@@ -766,28 +772,28 @@ const MTGMonteCarloAnalyzer = () => {
     } else {
       // Fallback to oracle text parsing
       const hasEntersTappedText = oracleText.toLowerCase().includes('enters the battlefield tapped') ||
-                                   oracleText.toLowerCase().includes('enters tapped');
-      const hasUnlessCondition = oracleText.includes('unless') || 
-                                 oracleText.includes('if you control') ||
-                                 oracleText.includes('if an opponent') ||
-                                 oracleText.includes('As ~ enters');
-      
+        oracleText.toLowerCase().includes('enters tapped');
+      const hasUnlessCondition = oracleText.includes('unless') ||
+        oracleText.includes('if you control') ||
+        oracleText.includes('if an opponent') ||
+        oracleText.includes('As ~ enters');
+
       entersTappedAlways = hasEntersTappedText && !hasUnlessCondition;
     }
-    
-    const isShockLand = landSubtypes.length === 2 && 
-                        oracleText.includes('pay 2 life');
+
+    const isShockLand = landSubtypes.length === 2 &&
+      oracleText.includes('pay 2 life');
 
     const hasCondition = oracleText.includes('unless you have two or more opponents') ||
-                        oracleText.includes('unless you control') ||
-                        oracleText.includes('unless an opponent');
+      oracleText.includes('unless you control') ||
+      oracleText.includes('unless an opponent');
 
     // Special land mechanics
     const isAncientTomb = name === 'ancient tomb';
     const isCityOfTraitors = name === 'city of traitors';
     const isPainLand = PAIN_LANDS.has(name);
     const isFiveColorPainLand = FIVE_COLOR_PAIN_LANDS.has(name);
-    
+
     // Ancient Tomb: deals 2 damage when tapped for mana
     // City of Traitors: sacrificed when another land is played
     // Pain Lands: deal 1 damage when tapped for colored mana
@@ -832,14 +838,14 @@ const MTGMonteCarloAnalyzer = () => {
   const processManaArtifact = (data) => {
     const produces = extractManaProduction(data.oracle_text);
     const manaAmount = extractManaAmount(data.oracle_text);
-    
+
     // Check if artifact enters tapped
     const cardName = data.name.toLowerCase();
     const oracle = (data.oracle_text || '').toLowerCase();
-    
+
     const entersTapped = ENTERS_TAPPED_ARTIFACTS.has(cardName) ||
-                        oracle.includes('enters tapped') ||
-                        oracle.includes('enters the battlefield tapped');
+      oracle.includes('enters tapped') ||
+      oracle.includes('enters the battlefield tapped');
 
     // Special artifact mechanics
     const isBasaltMonolith = cardName === 'basalt monolith';
@@ -849,13 +855,13 @@ const MTGMonteCarloAnalyzer = () => {
     const isChromeMox = cardName === 'chrome mox';
     const isMoxOpal = cardName === 'mox opal';
     const isMoxAmber = cardName === 'mox amber';
-    
+
     // Basalt/Grim Monolith/Mana Vault produce 3 colorless
     let finalManaAmount = manaAmount;
     if (isBasaltMonolith || isGrimMonolith || isManaVault) {
       finalManaAmount = 3;
     }
-    
+
     // Basalt Monolith, Grim Monolith, and Mana Vault don't untap during untap step
     const doesntUntapNaturally = isBasaltMonolith || isGrimMonolith || isManaVault;
 
@@ -900,15 +906,15 @@ const MTGMonteCarloAnalyzer = () => {
     // Determine how many lands this allows per turn
     const cardName = data.name.toLowerCase();
     let landsPerTurn = 2; // Default for most exploration effects
-    
+
     if (cardName.includes('azusa')) {
       landsPerTurn = 3;
     }
-    
+
     // Check if it's a creature or artifact
     const isCreature = data.type_line?.includes('Creature');
     const isArtifact = data.type_line?.includes('Artifact');
-    
+
     return {
       name: data.name,
       type: 'exploration',
@@ -928,11 +934,11 @@ const MTGMonteCarloAnalyzer = () => {
     let manaCost = data.mana_cost;
     let oracleText = data.oracle_text;
     let typeLine = data.type_line;
-    
+
     // If card has card_faces and is missing main-level data, use front face
     if (data.card_faces && data.card_faces.length > 0) {
       const frontFace = data.card_faces[0];
-      
+
       // Use front face data if main card data is missing
       if (cmc === undefined || cmc === null) {
         cmc = frontFace.cmc;
@@ -947,9 +953,9 @@ const MTGMonteCarloAnalyzer = () => {
         typeLine = frontFace.type_line;
       }
     }
-    
+
     const calculatedCMC = calculateCMC(cmc, manaCost);
-    
+
     // DEBUG: Log if CMC is 0 to help diagnose
     if (calculatedCMC === 0 && data.name) {
       console.log('⚠️ CMC is 0 for:', data.name);
@@ -959,7 +965,7 @@ const MTGMonteCarloAnalyzer = () => {
       console.log('  final manaCost:', manaCost);
       console.log('  has card_faces:', !!data.card_faces);
     }
-    
+
     return {
       name: data.name,
       type: 'spell',
@@ -972,10 +978,10 @@ const MTGMonteCarloAnalyzer = () => {
 
   const extractManaProduction = (oracleText) => {
     if (!oracleText) return [];
-    
+
     const produces = [];
     const manaSymbols = oracleText.match(/\{[WUBRGC]\}/g);
-    
+
     if (manaSymbols) {
       manaSymbols.forEach(symbol => {
         const color = symbol.replace(/[{}]/g, '');
@@ -992,7 +998,7 @@ const MTGMonteCarloAnalyzer = () => {
 
   const extractManaAmount = (oracleText) => {
     if (!oracleText) return 1;
-    
+
     // Check for {C}{C} patterns
     const colorlessMatch = oracleText.match(/\{C\}\{C\}/);
     if (colorlessMatch) return 2;
@@ -1003,27 +1009,27 @@ const MTGMonteCarloAnalyzer = () => {
 
   const extractRitualManaAmount = (oracleText) => {
     if (!oracleText) return 1;
-    
+
     // Look for patterns like "Add {B}{B}{B}"
     const manaSymbols = oracleText.match(/Add\s+(\{[WUBRGC]\})+/i);
     if (manaSymbols) {
       const symbols = manaSymbols[0].match(/\{[WUBRGC]\}/g);
       if (symbols) return symbols.length;
     }
-    
+
     // Look for "add three mana" or "add four mana" patterns
     const wordMatch = oracleText.match(/add\s+(one|two|three|four|five|six|seven)\s+mana/i);
     if (wordMatch) {
       const wordToNum = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7 };
       return wordToNum[wordMatch[1].toLowerCase()] || 1;
     }
-    
+
     // Look for numeric patterns like "add X mana"
     const numMatch = oracleText.match(/add\s+(\d+)\s+mana/i);
     if (numMatch) {
       return parseInt(numMatch[1]) || 1;
     }
-    
+
     // Default to 1
     return 1;
   };
@@ -1031,16 +1037,16 @@ const MTGMonteCarloAnalyzer = () => {
   const calculateCMC = (dataCmc, manaCostString) => {
     // Start with the provided CMC
     let cmc = dataCmc;
-    
+
     // If we have a mana cost string, calculate from it
     if (manaCostString) {
       let calculatedCmc = 0;
       const symbols = manaCostString.match(/\{([^}]+)\}/g) || [];
-      
+
       symbols.forEach(symbol => {
         const clean = symbol.replace(/[{}]/g, '');
         const num = parseInt(clean);
-        
+
         if (!isNaN(num)) {
           calculatedCmc += num;
         } else if (clean !== 'X' && clean !== 'Y' && clean !== 'Z') {
@@ -1056,32 +1062,33 @@ const MTGMonteCarloAnalyzer = () => {
 
     // Convert to integer, default to 0 if all else fails
     const result = parseInt(cmc);
-    
+
     // Return the result, but if it's NaN, return 0
     return isNaN(result) ? 0 : result;
   };
 
   // Deck parsing
   const parseDeckList = async (deckText) => {
+    const errors = [];
+    
     if (!deckText.trim()) {
-      setError('Please enter a deck list');
-      return null;
+      errors.push('Please enter a deck list');
+      return { errors, lands: [], artifacts: [], creatures: [], exploration: [], rituals: [], spells: [], totalCards: 0, landCount: 0 };
     }
 
-    if (!cardsDatabase && apiMode === 'local') {
-      setError('Please upload cards.json file first');
-      return null;
+    if (cardLookupMap.size === 0 && apiMode === 'local') {
+      errors.push('Please upload cards.json file first');
+      return { errors, lands: [], artifacts: [], creatures: [], exploration: [], rituals: [], spells: [], totalCards: 0, landCount: 0 };
     }
 
     const lines = deckText.split('\n');
     const cardCounts = new Map();
-    const errors = [];
 
     for (const line of lines) {
       const trimmed = line.trim();
-      if (!trimmed || trimmed.toLowerCase() === 'deck' || 
-          trimmed.toLowerCase() === 'sideboard' || 
-          trimmed.toLowerCase() === 'commander') {
+      if (!trimmed || trimmed.toLowerCase() === 'deck' ||
+        trimmed.toLowerCase() === 'sideboard' ||
+        trimmed.toLowerCase() === 'commander') {
         continue;
       }
 
@@ -1099,7 +1106,7 @@ const MTGMonteCarloAnalyzer = () => {
     }
 
     if (cardCounts.size === 0) {
-      setError('No valid cards found in deck list');
+      errors.push('No valid cards found in deck list');
       return null;
     }
 
@@ -1113,19 +1120,19 @@ const MTGMonteCarloAnalyzer = () => {
 
     for (const [cardName, quantity] of cardCounts.entries()) {
       const cardData = await lookupCard(cardName);
-      
+
       if (!cardData) {
         errors.push(`Card "${cardName}" not found`);
         continue;
       }
 
       const processed = processCardData(cardData);
-      
+
       // Skip if processCardData returned null (e.g., transform lands)
       if (!processed) {
         continue;
       }
-      
+
       processed.quantity = quantity;
 
       // Special handling for MDFCs with a land face
@@ -1135,11 +1142,11 @@ const MTGMonteCarloAnalyzer = () => {
         const backFace = cardData.card_faces[1];
         const frontIsLand = frontFace.type_line?.toLowerCase().includes('land');
         const backIsLand = backFace.type_line?.toLowerCase().includes('land');
-        
+
         if (frontIsLand || backIsLand) {
           // Add as land (already done by processCardData)
           lands.push(processed);
-          
+
           // ALSO add the spell side as a key-card option
           if (frontIsLand && !backIsLand) {
             // Front is land, back is spell - add back as spell
@@ -1176,9 +1183,7 @@ const MTGMonteCarloAnalyzer = () => {
       }
     }
 
-    if (errors.length > 0) {
-      setError(errors.join(', '));
-    }
+    setError(errors.length > 0 ? errors.join(', ') : '');
 
     const totalCards = [...lands, ...artifacts, ...creatures, ...exploration, ...rituals, ...spells]
       .reduce((sum, card) => sum + card.quantity, 0);
@@ -1191,7 +1196,8 @@ const MTGMonteCarloAnalyzer = () => {
       rituals,
       spells,
       totalCards,
-      landCount: lands.reduce((sum, card) => sum + card.quantity, 0)
+      landCount: lands.reduce((sum, card) => sum + card.quantity, 0),
+      errors: errors
     };
   };
 
@@ -1199,9 +1205,14 @@ const MTGMonteCarloAnalyzer = () => {
     const deck = await parseDeckList(deckText);
     if (deck) {
       setParsedDeck(deck);
-      setError('');
-      
-      // If comparison mode is enabled, also parse deck 2
+      if (deck.errors && deck.errors.length > 0) {
+        setError(deck.errors.join(', '));
+      } else {
+        setError('');
+      }
+    } else {
+      setParsedDeck(null);
+      setError('Parsing failed');
     }
   };
 
@@ -1217,7 +1228,7 @@ const MTGMonteCarloAnalyzer = () => {
 
   const buildCompleteDeck = (deckToParse) => {
     if (!deckToParse) return [];
-    
+
     // Use deck-specific toggles
     const includeArts = includeArtifacts;
     const disabledArts = disabledArtifacts;
@@ -1225,9 +1236,9 @@ const MTGMonteCarloAnalyzer = () => {
     const disabledCreats = disabledCreatures;
     const includeExplor = includeExploration;
     const disabledExplor = disabledExploration;
-    
+
     const deck = [];
-    
+
     deckToParse.lands.forEach(card => {
       for (let i = 0; i < card.quantity; i++) {
         deck.push({ ...card });
@@ -1278,7 +1289,7 @@ const MTGMonteCarloAnalyzer = () => {
       setError('Please parse a deck first');
       return;
     }
-    
+
     // Check if deck 2 is needed for comparison
 
     setIsSimulating(true);
@@ -1289,9 +1300,9 @@ const MTGMonteCarloAnalyzer = () => {
         // Run simulation for deck 1
         const results1 = monteCarlo(parsedDeck);
         setSimulationResults(results1);
-        
+
         // Run simulation for deck 2 if comparison mode
-        
+
         setIsSimulating(false);
       } catch (err) {
         setError('Simulation error: ' + err.message);
@@ -1303,7 +1314,7 @@ const MTGMonteCarloAnalyzer = () => {
   const monteCarlo = (deckToParse) => {
     const deck = buildCompleteDeck(deckToParse);
     const keyCardNames = Array.from(selectedKeyCards);
-    
+
     const results = {
       landsPerTurn: Array(turns).fill(null).map(() => []),
       untappedLandsPerTurn: Array(turns).fill(null).map(() => []),
@@ -1324,18 +1335,18 @@ const MTGMonteCarloAnalyzer = () => {
       const shuffled = shuffle(deck);
       let hand = shuffled.slice(0, handSize);
       let library = shuffled.slice(handSize);
-      
+
       // Mulligan logic
       let mulliganCount = 0;
       const maxMulligans = 6;
-      
+
       if (enableMulligans) {
         let shouldMulligan = true;
-        
+
         while (shouldMulligan && mulliganCount < maxMulligans) {
           shouldMulligan = false;
           const landCount = hand.filter(c => c.isLand).length;
-          
+
           // Determine if we should mulligan based on strategy
           if (mulliganStrategy === 'conservative') {
             // Conservative: only mulligan extreme hands (0 or 7 lands)
@@ -1375,7 +1386,7 @@ const MTGMonteCarloAnalyzer = () => {
             if (customMulliganRules.mulliganNoPlaysByTurn) {
               // Simulate first N turns to check for plays
               // For simplicity, check if we have castable spells
-              const hasEarlyPlay = hand.some(c => 
+              const hasEarlyPlay = hand.some(c =>
                 !c.isLand && (c.cmc || 0) <= customMulliganRules.noPlaysTurnThreshold
               );
               if (!hasEarlyPlay) {
@@ -1383,16 +1394,16 @@ const MTGMonteCarloAnalyzer = () => {
               }
             }
           }
-          
+
           if (shouldMulligan) {
             mulliganCount++;
             results.mulligans++;
-            
+
             if (mulliganRule === 'london') {
               // London Mulligan: Draw 7, then put N cards on bottom (where N = mulligan count)
               const newShuffle = shuffle(deck);
               const newHand = newShuffle.slice(0, 7);
-              
+
               // Put mulliganCount cards on bottom (for simplicity, put worst cards)
               // Prefer non-lands if we have too many lands, lands if we have too few
               const cardsToBottom = mulliganCount;
@@ -1410,7 +1421,7 @@ const MTGMonteCarloAnalyzer = () => {
                 // Otherwise sort by CMC (highest first)
                 return (b.cmc || 0) - (a.cmc || 0);
               });
-              
+
               hand = sortedHand.slice(cardsToBottom);
               library = newShuffle.slice(7);
             } else {
@@ -1423,7 +1434,7 @@ const MTGMonteCarloAnalyzer = () => {
           }
         }
       }
-      
+
       results.handsKept++;
 
       const battlefield = [];
@@ -1434,7 +1445,7 @@ const MTGMonteCarloAnalyzer = () => {
 
       for (let turn = 0; turn < turns; turn++) {
         const turnLog = { turn: turn + 1, actions: [], lifeLoss: 0 };
-        
+
         // Untap phase
         battlefield.forEach(p => {
           // Grim Monolith and Mana Vault don't untap during untap step
@@ -1442,13 +1453,13 @@ const MTGMonteCarloAnalyzer = () => {
             // Keep tapped
             return;
           }
-          
+
           p.tapped = false;
           if (p.summoningSick !== undefined) {
             p.summoningSick = false;
           }
         });
-        
+
         // Upkeep: Mana Vault damage
         let manaVaultDamage = 0;
         battlefield.forEach(p => {
@@ -1465,7 +1476,7 @@ const MTGMonteCarloAnalyzer = () => {
         // Commander Mode: Draw on turn 0 (multiplayer convention - everyone draws)
         // Standard Mode: Skip draw on turn 0 (on the play)
         const shouldDraw = turn > 0 || commanderMode;
-        
+
         if (shouldDraw && library.length > 0) {
           const drawn = library.shift();
           hand.push(drawn);
@@ -1477,26 +1488,26 @@ const MTGMonteCarloAnalyzer = () => {
         if (includeExploration) {
           const manaAvailable = calculateManaAvailability(battlefield);
           const explorationInHand = hand.filter(c => c.isExploration && !disabledExploration.has(c.name));
-          
+
           for (const exploration of explorationInHand) {
             if (canPlayCard(exploration, manaAvailable)) {
               const index = hand.indexOf(exploration);
               hand.splice(index, 1);
-              
+
               battlefield.push({
                 card: exploration,
                 tapped: exploration.entersTapped || false,
                 summoningSick: exploration.isManaCreature || false // Only creatures have summoning sickness for mana
                 // Exploration effect is IMMEDIATELY active for lands-per-turn
               });
-              
+
               tapManaSources(exploration, battlefield);
-              
+
               if (turnLog) {
                 const type = exploration.isCreature ? 'creature' : (exploration.isArtifact ? 'artifact' : 'permanent');
                 turnLog.actions.push(`Cast ${type}: ${exploration.name} (Exploration effect)`);
               }
-              
+
               // Recalculate mana after casting
               const newMana = calculateManaAvailability(battlefield);
               Object.assign(manaAvailable, newMana);
@@ -1520,70 +1531,153 @@ const MTGMonteCarloAnalyzer = () => {
         while (landsPlayedThisTurn < maxLandsPerTurn) {
           const landInHand = selectBestLand(hand, battlefield, library, turn);
           if (!landInHand) break;
-          
+
           const lifeLoss = playLand(landInHand, hand, battlefield, library, graveyard, turn, turnLog, keyCardNames, deckToParse);
           turnLog.lifeLoss += lifeLoss;
           cumulativeLifeLoss += lifeLoss;
-          
+
           if (lifeLoss > 0 && turnLog) {
             const lastAction = turnLog.actions[turnLog.actions.length - 1];
             if (lastAction && !lastAction.includes('Cannot play')) {
               turnLog.actions[turnLog.actions.length - 1] = `${lastAction} [-${lifeLoss} life]`;
             }
           }
-          
+
           landsPlayedThisTurn++;
         }
 
-        // Phase 4 Fetch
-        //const lifeLoss = FetchLand(battlefield, library, turn, turnLog, keyCardNames, deckToParse);
+        // PHASE 4: Activate fetch lands (lands already in play)
+        const fetchLands = battlefield.filter(p => p.card.isFetch && !p.tapped);
+        for (const fetchPermanent of fetchLands) {
+          // Check if we can afford the fetch cost
+          const manaAvailable = calculateManaAvailability(battlefield);
+          const fetchCost = fetchPermanent.card.fetchcost || 0;
+
+          // For free fetches (fetchcost = 0), no mana needed
+          // For mana_cost fetches, we need to pay with mana
+          let canAffordFetch = false;
+          
+          if (fetchPermanent.card.fetchType === 'free_slow') {
+            // Free activation, just tap it
+            canAffordFetch = true;
+          } else if (fetchCost > 0 && manaAvailable.total >= fetchCost) {
+            // Can afford the mana cost
+            canAffordFetch = true;
+          }
+
+          if (!canAffordFetch) {
+            // Can't afford the fetch, skip it
+            continue;
+          }
+
+          // Pay the mana cost by tapping sources
+          let manaStillNeeded = fetchCost;
+          const originalbattlefield = [...battlefield];
+
+          // Tap untapped lands/permanents to pay for the fetch
+          if (manaStillNeeded > 0) {
+            const untappedSources = battlefield.filter(p => 
+              !p.tapped && p.card.isLand && p !== fetchPermanent
+            );
+
+            for (const source of untappedSources) {
+              if (manaStillNeeded <= 0) break;
+              source.tapped = true;
+              manaStillNeeded -= source.card.manaAmount || 1;
+            }
+          }
+
+          const fetchedLand = findBestLandToFetch(fetchPermanent.card, library, battlefield, keyCardNames, deckToParse, turn);
+          if (fetchedLand) {
+            const libIndex = library.indexOf(fetchedLand);
+            library.splice(libIndex, 1);
+
+            // Check if the FETCH determines tapped state, otherwise check the land itself
+            let entersTapped;
+            if (fetchPermanent.card.fetchedLandEntersTapped) {
+              // Fetch says land enters tapped (e.g., Terramorphic Expanse)
+              entersTapped = true;
+            } else {
+              // Check if land itself enters tapped (e.g., shock lands)
+              entersTapped = doesLandEnterTapped(fetchedLand, battlefield, turn, commanderMode);
+            }
+
+            const fetchIndex = battlefield.indexOf(fetchPermanent);
+            battlefield.splice(fetchIndex, 1);
+            graveyard.push(fetchPermanent.card);
+
+            battlefield.push({
+              card: fetchedLand,
+              tapped: entersTapped,
+              enteredTapped: entersTapped
+            });
+
+            // Shock land decision
+            if (fetchedLand.isShockLand && turn <= 6 && entersTapped && !fetchPermanent.card.fetchedLandEntersTapped) {
+              battlefield[battlefield.length - 1].tapped = false;
+              battlefield[battlefield.length - 1].enteredTapped = false;
+              cumulativeLifeLoss += 2;
+            }
+
+            // Fetch land cost (life loss for damage fetches like Scalding Tarn)
+            if (fetchPermanent.card.fetchType === 'classic' || fetchPermanent.card.fetchType === 'slow') {
+              cumulativeLifeLoss += 1;
+              turnLog.lifeLoss += 1;
+            }
+
+            if (turnLog) {
+              const finalState = battlefield[battlefield.length - 1]?.tapped ? 'tapped' : 'untapped';
+              turnLog.actions.push(`Fetched ${fetchedLand.name} (${finalState}) [Mana: ${fetchCost}]`);
+            }
+          }
+        }
 
         // PHASE 5: Cast remaining spells (mana dorks, artifacts, etc.)
         castSpells(hand, battlefield, graveyard, turnLog, keyCardNames, deckToParse);
-        
+
         // Ancient Tomb: deals 2 damage per turn (regardless of tapped state)
-        const ancientTombCount = battlefield.filter(p => 
+        const ancientTombCount = battlefield.filter(p =>
           p.card.isLand && p.card.isAncientTomb
         ).length;
         const ancientTombDamage = ancientTombCount * 2;
-        
+
         if (ancientTombDamage > 0) {
           cumulativeLifeLoss += ancientTombDamage;
           turnLog.lifeLoss += ancientTombDamage;
           turnLog.actions.push(`Ancient Tomb damage: -${ancientTombDamage} life`);
         }
-        
+
         // Starting Town: deals 1 damage per turn at upkeep
         const startingTownCount = battlefield.filter(p =>
           p.card.isLand && p.card.name === 'starting town'
         ).length;
         const startingTownDamage = startingTownCount * 1;
-        
+
         if (startingTownDamage > 0) {
           cumulativeLifeLoss += startingTownDamage;
           turnLog.lifeLoss += startingTownDamage;
           turnLog.actions.push(`Starting Town damage: -${startingTownDamage} life`);
         }
-        
+
         // Pain Lands: deal 1 damage when tapped for colored mana
         // Simplified: assume all  pain lands dealt damage this under turn 5 turn
         const PainLands = battlefield.filter(p =>
           p.card.isLand && p.card.isPainLand
         ).length;
         const painLandDamage = PainLands * 1;
-        
-        if (painLandDamage > 0 && turn <= 5 ) {
+
+        if (painLandDamage > 0 && turn <= 5) {
           cumulativeLifeLoss += painLandDamage;
           turnLog.lifeLoss += painLandDamage;
           turnLog.actions.push(`Pain Land damage: -${painLandDamage} life`);
         }
-        
+
         // 5-Color Pain Lands (Mana Confluence, City of Brass): deal 1 damage when tapped
         const tapped5ColorPainLands = battlefield.filter(p =>
           p.card.isLand && p.card.isFiveColorPainLand && p.tapped
         ).length;
         const fiveColorPainDamage = tapped5ColorPainLands * 1;
-        
+
         if (fiveColorPainDamage > 0) {
           cumulativeLifeLoss += fiveColorPainDamage;
           turnLog.lifeLoss += fiveColorPainDamage;
@@ -1595,7 +1689,7 @@ const MTGMonteCarloAnalyzer = () => {
         // Track statistics
         const landCount = battlefield.filter(p => p.card.isLand).length;
         const untappedLandCount = battlefield.filter(p => p.card.isLand && !p.tapped).length;
-        
+
         results.landsPerTurn[turn].push(landCount);
         results.untappedLandsPerTurn[turn].push(untappedLandCount);
         results.lifeLossPerTurn[turn].push(cumulativeLifeLoss);
@@ -1603,7 +1697,7 @@ const MTGMonteCarloAnalyzer = () => {
         // Calculate mana availability
         const manaAvailable = calculateManaAvailability(battlefield);
         results.totalManaPerTurn[turn].push(manaAvailable.total);
-        
+
         // Only track W, U, B, R, G (not colorless)
         ['W', 'U', 'B', 'R', 'G'].forEach(color => {
           results.colorsByTurn[turn][color].push(manaAvailable.colors[color] || 0);
@@ -1613,25 +1707,25 @@ const MTGMonteCarloAnalyzer = () => {
         keyCardNames.forEach(cardName => {
           // Find the key card in deckToParse
           const keyCard = deckToParse.spells.find(c => c.name === cardName) ||
-                         deckToParse.creatures.find(c => c.name === cardName) ||
-                         deckToParse.artifacts.find(c => c.name === cardName) ||
-                         (deckToParse.exploration && deckToParse.exploration.find(c => c.name === cardName));
-          
+            deckToParse.creatures.find(c => c.name === cardName) ||
+            deckToParse.artifacts.find(c => c.name === cardName) ||
+            (deckToParse.exploration && deckToParse.exploration.find(c => c.name === cardName));
+
           if (keyCard && canPlayCard(keyCard, manaAvailable)) {
             results.keyCardPlayability[cardName][turn]++;
-            
+
             // Track play sequences by turn
             if (!results.fastestPlaySequences[cardName]) {
               results.fastestPlaySequences[cardName] = {};
             }
-            
+
             const currentTurn = turn + 1;
-            
+
             // Initialize array for this turn if needed
             if (!results.fastestPlaySequences[cardName][currentTurn]) {
               results.fastestPlaySequences[cardName][currentTurn] = [];
             }
-            
+
             // Add this sequence (limit to maxSequences examples per turn)
             if (results.fastestPlaySequences[cardName][currentTurn].length < maxSequences) {
               results.fastestPlaySequences[cardName][currentTurn].push({
@@ -1676,43 +1770,43 @@ const MTGMonteCarloAnalyzer = () => {
     const landsWithBouncability = lands.map(land => {
       // Defensive check: Also check by name if isBounce flag is missing
       const isBounceCard = land.isBounce || BOUNCE_LANDS.has(land.name.toLowerCase());
-      
+
       if (!isBounceCard) {
         return { land, canPlay: true };
       }
-      
+
       // Check if there's a non-bounce land on battlefield to bounce
-      const nonBounceLandsToReturn = battlefield.filter(p => 
-        p.card.isLand && 
-        !p.card.isBounce && 
+      const nonBounceLandsToReturn = battlefield.filter(p =>
+        p.card.isLand &&
+        !p.card.isBounce &&
         !BOUNCE_LANDS.has(p.card.name.toLowerCase())
       );
-      
-      return { 
-        land, 
-        canPlay: nonBounceLandsToReturn.length > 0 
+
+      return {
+        land,
+        canPlay: nonBounceLandsToReturn.length > 0
       };
     });
-    
+
     const playableLands = landsWithBouncability
       .filter(item => item.canPlay)
       .map(item => item.land);
-    
+
     if (playableLands.length === 0) return null;
 
     // Priority: fetch (mana costing fetches only if mana available)> untapped non-bounce >bounce (with non-bounce available) > tapped
     const fetches = playableLands.filter(l => l.isFetch && l.fetchType !== 'mana_cost');
     const untappedLands = battlefield.filter(d => d.isLand && !d.tapped);
-    if (fetches.length > 0 && untappedLands.length >= fetches[0].fetchcost ) return fetches[0];
+    if (fetches.length > 0 && untappedLands.length >= fetches[0].fetchcost) return fetches[0];
 
-    const untappedNonBounce = playableLands.filter(l => 
-      !l.entersTappedAlways && 
-      !l.isBounce && 
+    const untappedNonBounce = playableLands.filter(l =>
+      !l.entersTappedAlways &&
+      !l.isBounce &&
       !BOUNCE_LANDS.has(l.name.toLowerCase())
     );
     if (untappedNonBounce.length > 0) return untappedNonBounce[0];
 
-    const bouncelands = playableLands.filter(l => 
+    const bouncelands = playableLands.filter(l =>
       l.isBounce || BOUNCE_LANDS.has(l.name.toLowerCase())
     );
     if (bouncelands.length > 0) return bouncelands[0];
@@ -1725,31 +1819,30 @@ const MTGMonteCarloAnalyzer = () => {
     hand.splice(index, 1);
 
     let lifeLoss = 0;
-    
+
     // City of Traitors: Sacrifice when you play another land
-    const cityOfTraitorsInPlay = battlefield.filter(p => 
+    const cityOfTraitorsInPlay = battlefield.filter(p =>
       p.card.isLand && p.card.isCityOfTraitors
     );
-    
+
     if (cityOfTraitorsInPlay.length > 0 && !land.isCityOfTraitors) {
       // Sacrifice all City of Traitors
       cityOfTraitorsInPlay.forEach(city => {
         const cityIndex = battlefield.indexOf(city);
         battlefield.splice(cityIndex, 1);
         graveyard.push(city.card);
-        
+
         if (turnLog) {
           turnLog.actions.push(`Sacrificed ${city.card.name} (another land played)`);
         }
       });
     }
-
     if (land.isFetch) {
       // Hideaway fetch lands (Maestros Theater, etc.) - special handling
       if (land.isHideawayFetch) {
         // Hideaway lands enter tapped, then immediately sacrifice to fetch a basic tapped
         const fetchedLand = findBestLandToFetch(land, library, battlefield, keyCardNames, parsedDeck, turn);
-        
+
         if (fetchedLand) {
           const libIndex = library.indexOf(fetchedLand);
           library.splice(libIndex, 1);
@@ -1763,7 +1856,7 @@ const MTGMonteCarloAnalyzer = () => {
 
           // The hideaway land goes to graveyard (sacrificed)
           graveyard.push(land);
-          
+
           if (turnLog) {
             turnLog.actions.push(`Played ${land.name}, sacrificed it to fetch ${fetchedLand.name} (tapped)`);
           }
@@ -1774,121 +1867,50 @@ const MTGMonteCarloAnalyzer = () => {
             tapped: true,
             enteredTapped: true
           });
-          
+
           if (turnLog) {
             turnLog.actions.push(`Played ${land.name} (tapped, no fetch targets)`);
           }
         }
       }
-      // Regular fetch land logic
+      // Regular fetch land logic 
       else {
-        const fetchedLand = findBestLandToFetch(land, library, battlefield, keyCardNames, parsedDeck, turn);
-        
-        if (fetchedLand) {
-          const libIndex = library.indexOf(fetchedLand);
-          library.splice(libIndex, 1);
-
-          // Check if the FETCH determines tapped state, otherwise check the land itself
-          let entersTapped;
-          if (land.fetchedLandEntersTapped) {
-            // Fetch says land enters tapped (e.g., Terramorphic Expanse)
-            entersTapped = true;
-          } else {
-            // Check if land itself enters tapped (e.g., shock lands)
-            entersTapped = doesLandEnterTapped(fetchedLand, battlefield, turn, commanderMode);
-          }
-          
-          battlefield.push({
-            card: fetchedLand,
-            tapped: entersTapped,
-            enteredTapped: entersTapped
-          });
-
-          // Shock land decision (only if not forced tapped by fetch before turn 6 always untapped)
-          if (fetchedLand.isShockLand && turn <= 6 && entersTapped && !land.fetchedLandEntersTapped) {
-            battlefield[battlefield.length - 1].tapped = false;
-            battlefield[battlefield.length - 1].enteredTapped = false;
-            lifeLoss += 2;
-          }
-
-          // Myriad Landscape fetches TWO basics of the same type
-          if (land.fetchesTwoLands && !land.tapped) {
-            // Find a second basic of the SAME type
-            const secondLand = library.find(card => 
-              card.isLand && 
-              card.isBasic && 
-              card.name === fetchedLand.name
-            );
-            
-            if (secondLand) {
-              const secondIndex = library.indexOf(secondLand);
-              library.splice(secondIndex, 1);
-              
-              battlefield.push({
-                card: secondLand,
-                tapped: true,
-                enteredTapped: true
-              });
-            }
-          }
-
-          // Fetch land cost
-          if (land.fetchType === 'classic' || land.fetchType === 'slow') {
-            lifeLoss += 1;
-          }
-
-          graveyard.push(land);
-          
-          if (turnLog) {
-            if (land.fetchesTwoLands) {
-              const secondLandName = battlefield[battlefield.length - 1]?.card.name;
-              if (secondLandName) {
-                turnLog.actions.push(`Played ${land.name}, fetched 2x ${fetchedLand.name} (tapped)`);
-              } else {
-                turnLog.actions.push(`Played ${land.name}, fetched ${fetchedLand.name} (only 1 available)`);
-              }
-            } else {
-              const finalState = battlefield[battlefield.length - 1]?.tapped ? 'tapped' : 'untapped';
-              turnLog.actions.push(`Played ${land.name}, fetched ${fetchedLand.name} (${finalState})`);
-            }
-          }
-        } else {
-          // No valid fetch target, play as regular land
-          battlefield.push({
-            card: land,
-            tapped: true,
-            enteredTapped: true
-          });
-          
-          if (turnLog) {
-            turnLog.actions.push(`Played ${land.name} (no fetch targets)`);
-          }
+        const entersTapped = doesLandEnterTapped(land, battlefield, turn, commanderMode);
+        battlefield.push({
+          card: land,
+          tapped: entersTapped,
+          enteredTapped: entersTapped
+        });
+        if (turnLog) {
+          const finalState = battlefield[battlefield.length - 1]?.tapped ? 'tapped' : 'untapped';
+          turnLog.actions.push(`Played ${land.name} (fetch land, ${finalState})`);
         }
       }
-    } else {
+    }
+    else {
       // Regular land
       const entersTapped = doesLandEnterTapped(land, battlefield, turn, commanderMode);
-      
+
       // Defensive check: Also check by name if isBounce flag is missing
       const isBounceCard = land.isBounce || BOUNCE_LANDS.has(land.name.toLowerCase());
-      
+
       // Bounce land mechanic - check BEFORE adding to battlefield
       if (isBounceCard) {
         // Check if there are OTHER lands to bounce (before we add this one)
-        const landsToBounce = battlefield.filter(p => 
+        const landsToBounce = battlefield.filter(p =>
           p.card.isLand && !p.card.isBounce && !BOUNCE_LANDS.has(p.card.name.toLowerCase())
         );
-        
+
         if (landsToBounce.length === 0) {
           // Cannot play bounce land without another NON-BOUNCE land to bounce
           if (turnLog) {
             turnLog.actions.push(`Cannot play ${land.name} (no non-bounce lands to bounce)`);
           }
-          
+
           return 0; // No life loss, don't play the land at all
         }
       }
-      
+
       // Now add the land to battlefield
       battlefield.push({
         card: land,
@@ -1902,27 +1924,27 @@ const MTGMonteCarloAnalyzer = () => {
         battlefield[battlefield.length - 1].enteredTapped = false;
         lifeLoss += 2;
       }
-      
+
       // Bounce land mechanic - execute the bounce AFTER adding to battlefield
       if (isBounceCard) {
         // Get the state of the bounce land BEFORE bouncing
         const bounceLandIndex = battlefield.length - 1;
         const finalState = battlefield[bounceLandIndex]?.tapped ? 'tapped' : 'untapped';
-        
+
         // Find non-bounce lands to bounce
-        const landsToBounce = battlefield.filter(p => 
+        const landsToBounce = battlefield.filter(p =>
           p.card.isLand && !p.card.isBounce && !BOUNCE_LANDS.has(p.card.name.toLowerCase())
         );
-        
+
         // Prefer bouncing tapped lands
         const tappedLands = landsToBounce.filter(p => p.tapped);
         const toBounce = tappedLands.length > 0 ? tappedLands[0] : landsToBounce[0];
         const bouncedState = toBounce.tapped ? 'tapped' : 'untapped';
-        
+
         const bounceIndex = battlefield.indexOf(toBounce);
         battlefield.splice(bounceIndex, 1);
         hand.push(toBounce.card);
-        
+
         // Log play + bounce as single action
         if (turnLog) {
           turnLog.actions.push(`Played ${land.name} (${finalState}), bounced ${toBounce.card.name} (${bouncedState})`);
@@ -1942,18 +1964,18 @@ const MTGMonteCarloAnalyzer = () => {
   const findBestLandToFetch = (fetchLand, library, battlefield, keyCardNames, parsedDeck, turn) => {
     // For hideaway fetches and basic-only fetches, only fetch basic lands
     const onlyBasics = fetchLand.isHideawayFetch || fetchLand.fetchesOnlyBasics;
-    
+
     const eligibleLands = library.filter(card => {
       if (!card.isLand) return false;
-      
+
       // If this fetch only gets basics, check if the land is basic
       if (onlyBasics && !card.isBasic) {
         return false;
       }
-      
+
       const landTypes = card.landSubtypes || [];
       const fetchColors = fetchLand.fetchColors || [];
-      
+
       return landTypes.some(type => {
         const typeToColor = {
           'Plains': 'W', 'Island': 'U', 'Swamp': 'B', 'Mountain': 'R', 'Forest': 'G'
@@ -1966,19 +1988,19 @@ const MTGMonteCarloAnalyzer = () => {
 
     // Determine what colors we need for key cards
     const neededColors = new Set();
-    
+
     if (keyCardNames && keyCardNames.length > 0 && parsedDeck) {
       // Find key cards and sort by CMC (lower CMC = higher priority)
       const keyCards = [];
       keyCardNames.forEach(cardName => {
         const card = parsedDeck.spells.find(c => c.name === cardName) ||
-                     parsedDeck.creatures.find(c => c.name === cardName) ||
-                     parsedDeck.artifacts.find(c => c.name === cardName);
+          parsedDeck.creatures.find(c => c.name === cardName) ||
+          parsedDeck.artifacts.find(c => c.name === cardName);
         if (card) keyCards.push(card);
       });
-      
+
       keyCards.sort((a, b) => a.cmc - b.cmc);
-      
+
       // Get colors needed for key cards (prioritize lower CMC cards)
       keyCards.forEach(card => {
         const symbols = card.manaCost.match(/\{([^}]+)\}/g) || [];
@@ -1994,8 +2016,8 @@ const MTGMonteCarloAnalyzer = () => {
     // Calculate what colors we already have
     const currentColors = new Set();
     battlefield.forEach(permanent => {
-      if (permanent.card.isLand || permanent.card.isManaArtifact || 
-          (permanent.card.isManaCreature && !permanent.summoningSick)) {
+      if (permanent.card.isLand || permanent.card.isManaArtifact ||
+        (permanent.card.isManaCreature && !permanent.summoningSick)) {
         (permanent.card.produces || []).forEach(color => {
           if (['W', 'U', 'B', 'R', 'G'].includes(color)) {
             currentColors.add(color);
@@ -2015,15 +2037,15 @@ const MTGMonteCarloAnalyzer = () => {
     // Score lands based on priority
     const scoredLands = eligibleLands.map(land => {
       let score = 0;
-      
+
       // Highest priority: lands that produce missing colors
       const producesNeededColor = (land.produces || []).some(color => missingColors.has(color));
-      
+
       if (producesNeededColor) {
         score += 300;
       }
 
-     // Bonus for early triomes
+      // Bonus for early triomes
       if (turn <= 2 && ((land.produces || []).length > 2)) {
         score += 1000;
       }
@@ -2032,21 +2054,21 @@ const MTGMonteCarloAnalyzer = () => {
       if (turn >= 6 && (land.isShockLand)) {
         score -= 100;
       }
-      
+
       // Bonus for dual lands
       if ((land.produces || []).length >= 2) {
         score += 100;
       }
-      
+
       // Bonus for producing multiple missing colors
       const missingColorCount = (land.produces || []).filter(c => missingColors.has(c)).length;
       score += missingColorCount * 250;
-      
+
       return { land, score };
     });
 
     scoredLands.sort((a, b) => b.score - a.score);
-    
+
     return scoredLands[0].land;
   };
 
@@ -2055,19 +2077,19 @@ const MTGMonteCarloAnalyzer = () => {
     if (land.isShockLand) {
       return true; // Default to tapped, we'll pay life to untap it
     }
-    
+
     // Fast lands: enter untapped if you control 2 or fewer other lands
     if (land.isFast) {
       const landsOnBattlefield = battlefield.filter(p => p.card.isLand).length;
       return landsOnBattlefield > 2; // Tapped if more than 2 other lands
     }
-    
+
     // Battle Lands / Tango Lands: enter untapped if you control 2+ basic lands
     if (land.isBattleLand) {
       const basicLands = battlefield.filter(p => p.card.isLand && p.card.isBasic).length;
       return basicLands < 2; // Tapped unless 2+ basics
     }
-    
+
     // Check lands: enter tapped unless you control a land with the appropriate basic type
     if (land.isCheck) {
       // Determine which basic types this check land needs
@@ -2094,64 +2116,64 @@ const MTGMonteCarloAnalyzer = () => {
       } else if (land.produces.includes('G') && land.produces.includes('U')) {
         needsTypes.push('Forest', 'Island');
       }
-      
+
       // Check if battlefield has any land with these types
       const hasAppropriateType = battlefield.some(p => {
         if (!p.card.isLand) return false;
         const subtypes = p.card.landSubtypes || [];
         return needsTypes.some(type => subtypes.includes(type));
       });
-      
+
       return !hasAppropriateType; // Enters tapped unless we have the right type
     }
-    
+
     // Starting Town: enters untapped ONLY on turns 1, 2, or 3 (0-indexed: 0, 1, 2)
     if (land.name === 'starting town') {
       return turn > 2; // Tapped after turn 3
     }
-    
+
     // Crowd Lands: enter tapped unless you have 2+ opponents
     // Check by name (Crowd lands are defined in CROWD_LANDS set during parsing)
     const CROWD_LANDS = new Set([
       'luxury suite', 'morphic pool', 'spire garden', 'bountiful promenade', 'sea of clouds',
       'spectator seating', 'undergrowth stadium', 'training center', 'vault of champions', 'rejuvenating springs'
     ]);
-    
+
     if (CROWD_LANDS.has(land.name)) {
       // In Commander Mode (multiplayer), assume 2+ opponents → enters untapped
       // In 1v1 mode, only 1 opponent → enters tapped
       return !commanderMode; // Tapped if NOT commander mode
     }
-    
+
     if (land.entersTappedAlways) return true;
-    
+
     // Check for condition (e.g., "unless you have two or more opponents")
     if (land.hasCondition) return false; // Assume Commander format
-    
+
     return false;
   };
 
   const castSpells = (hand, battlefield, graveyard, turnLog, keyCardNames, parsedDeck) => {
     let changed = true;
-    
+
     // Phase 1: Cast mana-producing permanents (creatures, artifacts)
     // Note: Exploration effects are already cast in the main turn loop BEFORE lands
     // Priority: Regular mana dorks > Artifacts
     while (changed) {
       changed = false;
       const manaAvailable = calculateManaAvailability(battlefield);
-      
+
       const creatures = hand.filter(c => c.isManaCreature);
       const exploration = hand.filter(c => c.isExploration); // Usually empty - already cast earlier
       const artifacts = hand.filter(c => c.isManaArtifact);
-      
+
       // Priority order: Regular mana dorks > Exploration effects (if any left) > Artifacts
       const castable = [...creatures, ...exploration, ...artifacts].sort((a, b) => a.cmc - b.cmc);
 
       for (const spell of castable) {
         if (canPlayCard(spell, manaAvailable)) {
           // Special artifact requirements
-          
+
           // Mox Diamond: requires discarding a land
           if (spell.isMoxDiamond) {
             const landsInHand = hand.filter(c => c.isLand);
@@ -2164,7 +2186,7 @@ const MTGMonteCarloAnalyzer = () => {
             hand.splice(discardIndex, 1);
             graveyard.push(landToDiscard);
           }
-          
+
           // Chrome Mox: requires imprinting a non-land card
           if (spell.isChromeMox) {
             const nonLandsInHand = hand.filter(c => !c.isLand);
@@ -2178,23 +2200,23 @@ const MTGMonteCarloAnalyzer = () => {
             // Note: We'd need to track imprinted card for color production
             // For now, assume it produces any color
           }
-          
+
           // Mox Opal: requires metalcraft (3 artifacts)
           if (spell.isMoxOpal) {
-            const artifactCount = battlefield.filter(p => 
+            const artifactCount = battlefield.filter(p =>
               p.card.type?.includes('artifact') || p.card.isManaArtifact
             ).length;
             // Note: Mox Opal itself doesn't count yet (not on battlefield)
             // After casting, it will be artifact #(N+1)
             // For now, we allow casting but it won't produce mana until 3+ artifacts total
           }
-          
+
           // Mox Amber: requires legendary creature/planeswalker
           if (spell.isMoxAmber) {
             // Note: Requires checking for legendaries on battlefield
             // For simplicity, allow casting but may not produce mana
           }
-          
+
           const index = hand.indexOf(spell);
           hand.splice(index, 1);
 
@@ -2212,13 +2234,13 @@ const MTGMonteCarloAnalyzer = () => {
             if (spell.isManaArtifact) type = 'artifact';
             else if (spell.isManaCreature) type = 'creature';
             else if (spell.isExploration) type = spell.isCreature ? 'creature' : (spell.isArtifact ? 'artifact' : 'permanent');
-            
+
             const suffix = spell.isExploration ? ' (Exploration effect)' : '';
             const tappedSuffix = spell.entersTapped ? ' (enters tapped)' : '';
             let specialSuffix = '';
             if (spell.isMoxDiamond) specialSuffix = ' (discarded land)';
             if (spell.isChromeMox) specialSuffix = ' (imprinted card)';
-            
+
             turnLog.actions.push(`Cast ${type}: ${spell.name}${suffix}${tappedSuffix}${specialSuffix}`);
           }
 
@@ -2253,9 +2275,9 @@ const MTGMonteCarloAnalyzer = () => {
       let needed = colorNeeds[color];
       if (needed === 0) return;
 
-      const sources = battlefield.filter(p => 
-        !p.tapped && 
-        p.card.produces && 
+      const sources = battlefield.filter(p =>
+        !p.tapped &&
+        p.card.produces &&
         p.card.produces.includes(color) &&
         (!p.summoningSick || p.card.isLand)
       );
@@ -2269,8 +2291,8 @@ const MTGMonteCarloAnalyzer = () => {
     });
 
     // Then tap any remaining sources for generic mana
-    const untappedSources = battlefield.filter(p => 
-      !p.tapped && 
+    const untappedSources = battlefield.filter(p =>
+      !p.tapped &&
       (!p.summoningSick || p.card.isLand)
     );
 
@@ -2288,7 +2310,7 @@ const MTGMonteCarloAnalyzer = () => {
 
     battlefield.filter(p => !p.tapped).forEach(permanent => {
       const card = permanent.card;
-      
+
       if (card.isLand) {
         const landManaAmount = card.manaAmount || 1; // Ancient Tomb/City of Traitors produce 2
         total += landManaAmount;
@@ -2299,18 +2321,18 @@ const MTGMonteCarloAnalyzer = () => {
       } else if (card.isManaArtifact) {
         // Mox Opal: only produces mana with metalcraft (3+ artifacts)
         if (card.isMoxOpal) {
-          const artifactCount = battlefield.filter(p => 
+          const artifactCount = battlefield.filter(p =>
             p.card.type?.includes('artifact') || p.card.isManaArtifact
           ).length;
           if (artifactCount < 3) {
             return; // Mox Opal doesn't produce mana without metalcraft
           }
         }
-        
+
         // Mox Amber: only produces colors from legendary creatures/planeswalkers
         if (card.isMoxAmber) {
-          const legendaries = battlefield.filter(p => 
-            p.card.oracleText?.includes('Legendary') || 
+          const legendaries = battlefield.filter(p =>
+            p.card.oracleText?.includes('Legendary') ||
             p.card.type?.includes('Legendary')
           );
           if (legendaries.length === 0) {
@@ -2319,7 +2341,7 @@ const MTGMonteCarloAnalyzer = () => {
           // For simplicity, allow any color if legendaries exist
           // Proper implementation would track legendary colors
         }
-        
+
         // Artifacts don't have summoning sickness - can tap immediately
         total += card.manaAmount || 1;
         card.produces.forEach(color => {
@@ -2343,7 +2365,7 @@ const MTGMonteCarloAnalyzer = () => {
     // Parse color requirements from mana cost
     const colorRequirements = { W: 0, U: 0, B: 0, R: 0, G: 0 };
     const symbols = card.manaCost.match(/\{([^}]+)\}/g) || [];
-    
+
     symbols.forEach(symbol => {
       const clean = symbol.replace(/[{}]/g, '');
       // Only count actual color symbols (not numbers or X)
@@ -2389,7 +2411,7 @@ const MTGMonteCarloAnalyzer = () => {
     try {
       // Load html2canvas library
       const html2canvas = await loadHtml2Canvas();
-      
+
       // Get the results section
       const resultsSection = document.getElementById('results-section');
       if (!resultsSection) {
@@ -2475,8 +2497,8 @@ const MTGMonteCarloAnalyzer = () => {
         return <span key={idx} style={{ marginLeft: '2px' }}>{colorSymbols[symbol]}</span>;
       }
       // Generic mana (numbers)
-      return <span key={idx} style={{ 
-        marginLeft: '2px', 
+      return <span key={idx} style={{
+        marginLeft: '2px',
         display: 'inline-block',
         width: '18px',
         height: '18px',
@@ -2544,12 +2566,12 @@ const MTGMonteCarloAnalyzer = () => {
   };
 
   const chartData = prepareChartData();
-  
+
   // Prepare chart data for deck 2 if in comparison mode
-  
+
 
   return (
-    <div style={{ 
+    <div style={{
       fontFamily: "'Inter', 'Segoe UI', sans-serif",
       maxWidth: '1400px',
       margin: '0 auto',
@@ -2599,17 +2621,17 @@ const MTGMonteCarloAnalyzer = () => {
 
         {apiMode === 'local' && (
           <div style={{ marginTop: '15px' }}>
-            <div style={{ 
-              background: '#dbeafe', 
-              padding: '12px', 
-              borderRadius: '8px', 
+            <div style={{
+              background: '#dbeafe',
+              padding: '12px',
+              borderRadius: '8px',
               marginBottom: '12px',
               fontSize: '0.875rem'
             }}>
               <p style={{ margin: '0 0 8px 0', fontWeight: 600 }}>📥 How to get cards.json:</p>
               <ol style={{ margin: 0, paddingLeft: '20px' }}>
-                <li>Visit <a 
-                  href="https://scryfall.com/docs/api/bulk-data" 
+                <li>Visit <a
+                  href="https://scryfall.com/docs/api/bulk-data"
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{ color: '#667eea', fontWeight: 600 }}
@@ -2647,7 +2669,7 @@ const MTGMonteCarloAnalyzer = () => {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
           <h3 style={{ margin: 0 }}>📝 Deck List</h3>
         </div>
-        
+
         <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '20px' }}>
           <div>
             <div style={{ fontSize: '0.875rem', fontWeight: 600, marginBottom: '8px', color: '#667eea' }}>
@@ -2705,7 +2727,7 @@ const MTGMonteCarloAnalyzer = () => {
       {parsedDeck && (
         <div>
           {/* Headers */}
-          
+
           {/* Deck Statistics Row */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '20px', marginBottom: '20px', alignItems: 'start' }}>
             <div style={{
@@ -2718,7 +2740,7 @@ const MTGMonteCarloAnalyzer = () => {
               <p>Total Cards: {parsedDeck.totalCards}</p>
               <p>Lands: {parsedDeck.landCount} ({parsedDeck.totalCards > 0 ? ((parsedDeck.landCount / parsedDeck.totalCards) * 100).toFixed(1) : 0}%)</p>
             </div>
-            
+
           </div>
 
           {/* Lands Section Row */}
@@ -2730,255 +2752,255 @@ const MTGMonteCarloAnalyzer = () => {
               boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
             }}>
               <h3 style={{ marginTop: 0 }}>🏞️ Detected Lands ({parsedDeck.landCount})</h3>
-            {parsedDeck.lands.map((land, idx) => {
-              // Use the hasInternalLogic flag set during parsing
-              // This is set to true if the land is in any special set with hardcoded logic
-              const showLogic = land.hasInternalLogic;
-              
-              return (
-                <div key={idx} style={{ 
-                  padding: '8px 0', 
-                  borderBottom: '1px solid #f3f4f6',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center'
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
-                    <span style={{ fontWeight: 600 }}>{land.quantity}x {land.name}</span>
-                    {land.isBasic && <span style={{ marginLeft: '8px', fontSize: '0.875rem' }}>⭐</span>}
-                    {land.isFetch && <span style={{ marginLeft: '10px', fontSize: '0.875rem' }}>FETCH {getFetchSymbol(land.fetchType)}</span>}
-                    {showLogic && (
-                      <span style={{ 
-                        marginLeft: '10px', 
-                        fontSize: '0.75rem', 
-                        background: '#dbeafe', 
-                        color: '#1e40af',
-                        padding: '2px 6px',
-                        borderRadius: '4px',
-                        fontWeight: 600
-                      }}>
-                        LOGIC
-                      </span>
-                    )}
-                    {!showLogic && (
-                      <span style={{ 
-                        marginLeft: '10px', 
-                        fontSize: '0.75rem', 
-                        background: '#f3f4f6', 
-                        color: '#6b7280',
-                        padding: '2px 6px',
-                        borderRadius: '4px'
-                      }}>
-                        PARSED
-                      </span>
-                    )}
+              {parsedDeck.lands.map((land, idx) => {
+                // Use the hasInternalLogic flag set during parsing
+                // This is set to true if the land is in any special set with hardcoded logic
+                const showLogic = land.hasInternalLogic;
+
+                return (
+                  <div key={idx} style={{
+                    padding: '8px 0',
+                    borderBottom: '1px solid #f3f4f6',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
+                      <span style={{ fontWeight: 600 }}>{land.quantity}x {land.name}</span>
+                      {land.isBasic && <span style={{ marginLeft: '8px', fontSize: '0.875rem' }}>⭐</span>}
+                      {land.isFetch && <span style={{ marginLeft: '10px', fontSize: '0.875rem' }}>FETCH {getFetchSymbol(land.fetchType)}</span>}
+                      {showLogic && (
+                        <span style={{
+                          marginLeft: '10px',
+                          fontSize: '0.75rem',
+                          background: '#dbeafe',
+                          color: '#1e40af',
+                          padding: '2px 6px',
+                          borderRadius: '4px',
+                          fontWeight: 600
+                        }}>
+                          LOGIC
+                        </span>
+                      )}
+                      {!showLogic && (
+                        <span style={{
+                          marginLeft: '10px',
+                          fontSize: '0.75rem',
+                          background: '#f3f4f6',
+                          color: '#6b7280',
+                          padding: '2px 6px',
+                          borderRadius: '4px'
+                        }}>
+                          PARSED
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', marginLeft: '10px' }}>
+                      {land.produces.map(color => (
+                        <span key={color} style={{ marginLeft: '5px', fontSize: '1.2rem' }}>{getManaSymbol(color)}</span>
+                      ))}
+                    </div>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', marginLeft: '10px' }}>
-                    {land.produces.map(color => (
-                      <span key={color} style={{ marginLeft: '5px', fontSize: '1.2rem' }}>{getManaSymbol(color)}</span>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })}
             </div>
-            
+
           </div>
 
           {/* Mana Artifacts Section Row */}
-          {(parsedDeck.artifacts.length > 0 ) && (
+          {(parsedDeck.artifacts.length > 0) && (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '20px', marginBottom: '20px', alignItems: 'start' }}>
-          {parsedDeck.artifacts.length > 0 && (
-            <div style={{
-              background: 'white',
-              padding: '20px',
-              borderRadius: '12px',
-              marginBottom: '20px',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-            }}>
-              <h3 style={{ marginTop: 0 }}>⚙️ Mana Artifacts</h3>
-              <label style={{ display: 'block', marginBottom: '15px' }}>
-                <input
-                  type="checkbox"
-                  checked={includeArtifacts}
-                  onChange={(e) => {
-                    setIncludeArtifacts(e.target.checked);
-                    if (e.target.checked) {
-                      setDisabledArtifacts(new Set());
-                    } else {
-                      const allArtifacts = new Set(parsedDeck.artifacts.map(a => a.name));
-                      setDisabledArtifacts(allArtifacts);
-                    }
-                  }}
-                />
-                <span style={{ marginLeft: '8px' }}>Enable All Artifacts</span>
-              </label>
-              {parsedDeck.artifacts.map((artifact, idx) => (
-                <div key={idx} style={{ 
-                  padding: '8px 0', 
-                  borderBottom: '1px solid #f3f4f6',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center'
+              {parsedDeck.artifacts.length > 0 && (
+                <div style={{
+                  background: 'white',
+                  padding: '20px',
+                  borderRadius: '12px',
+                  marginBottom: '20px',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
                 }}>
-                  <label style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
+                  <h3 style={{ marginTop: 0 }}>⚙️ Mana Artifacts</h3>
+                  <label style={{ display: 'block', marginBottom: '15px' }}>
                     <input
                       type="checkbox"
-                      checked={includeArtifacts && !disabledArtifacts.has(artifact.name)}
+                      checked={includeArtifacts}
                       onChange={(e) => {
-                        const newSet = new Set(disabledArtifacts);
+                        setIncludeArtifacts(e.target.checked);
                         if (e.target.checked) {
-                          newSet.delete(artifact.name);
+                          setDisabledArtifacts(new Set());
                         } else {
-                          newSet.add(artifact.name);
+                          const allArtifacts = new Set(parsedDeck.artifacts.map(a => a.name));
+                          setDisabledArtifacts(allArtifacts);
                         }
-                        setDisabledArtifacts(newSet);
                       }}
                     />
-                    <span style={{ marginLeft: '8px', fontWeight: 600 }}>
-                      {artifact.quantity}x {artifact.name}
-                    </span>
-                    <span style={{ marginLeft: '10px', fontSize: '0.875rem', color: '#6b7280' }}>
-                      +{artifact.manaAmount} Mana, CMC {artifact.cmc}
-                    </span>
+                    <span style={{ marginLeft: '8px' }}>Enable All Artifacts</span>
                   </label>
-                  <div style={{ display: 'flex', alignItems: 'center', marginLeft: '10px' }}>
-                    {artifact.produces.map(color => (
-                      <span key={color} style={{ marginLeft: '5px', fontSize: '1.2rem' }}>{getManaSymbol(color)}</span>
-                    ))}
-                  </div>
+                  {parsedDeck.artifacts.map((artifact, idx) => (
+                    <div key={idx} style={{
+                      padding: '8px 0',
+                      borderBottom: '1px solid #f3f4f6',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center'
+                    }}>
+                      <label style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
+                        <input
+                          type="checkbox"
+                          checked={includeArtifacts && !disabledArtifacts.has(artifact.name)}
+                          onChange={(e) => {
+                            const newSet = new Set(disabledArtifacts);
+                            if (e.target.checked) {
+                              newSet.delete(artifact.name);
+                            } else {
+                              newSet.add(artifact.name);
+                            }
+                            setDisabledArtifacts(newSet);
+                          }}
+                        />
+                        <span style={{ marginLeft: '8px', fontWeight: 600 }}>
+                          {artifact.quantity}x {artifact.name}
+                        </span>
+                        <span style={{ marginLeft: '10px', fontSize: '0.875rem', color: '#6b7280' }}>
+                          +{artifact.manaAmount} Mana, CMC {artifact.cmc}
+                        </span>
+                      </label>
+                      <div style={{ display: 'flex', alignItems: 'center', marginLeft: '10px' }}>
+                        {artifact.produces.map(color => (
+                          <span key={color} style={{ marginLeft: '5px', fontSize: '1.2rem' }}>{getManaSymbol(color)}</span>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          )}
-          
+              )}
+
             </div>
           )}
 
           {/* Mana Creatures Section Row */}
-          {(parsedDeck.creatures.length > 0 ) && (
+          {(parsedDeck.creatures.length > 0) && (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '20px', marginBottom: '20px', alignItems: 'start' }}>
-          {parsedDeck.creatures.length > 0 && (
-            <div style={{
-              background: 'white',
-              padding: '20px',
-              borderRadius: '12px',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-            }}>
-              <h3 style={{ marginTop: 0 }}>🌱 Mana Creatures</h3>
-              <label style={{ display: 'block', marginBottom: '15px' }}>
-                <input
-                  type="checkbox"
-                  checked={includeCreatures}
-                  onChange={(e) => {
-                    setIncludeCreatures(e.target.checked);
-                    if (e.target.checked) {
-                      setDisabledCreatures(new Set());
-                    } else {
-                      const allCreatures = new Set(parsedDeck.creatures.map(c => c.name));
-                      setDisabledCreatures(allCreatures);
-                    }
-                  }}
-                />
-                <span style={{ marginLeft: '8px' }}>Enable All Creatures</span>
-              </label>
-              {parsedDeck.creatures.map((creature, idx) => (
-                <div key={idx} style={{ 
-                  padding: '8px 0', 
-                  borderBottom: '1px solid #f3f4f6',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center'
+              {parsedDeck.creatures.length > 0 && (
+                <div style={{
+                  background: 'white',
+                  padding: '20px',
+                  borderRadius: '12px',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
                 }}>
-                  <label style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
+                  <h3 style={{ marginTop: 0 }}>🌱 Mana Creatures</h3>
+                  <label style={{ display: 'block', marginBottom: '15px' }}>
                     <input
                       type="checkbox"
-                      checked={includeCreatures && !disabledCreatures.has(creature.name)}
+                      checked={includeCreatures}
                       onChange={(e) => {
-                        const newSet = new Set(disabledCreatures);
+                        setIncludeCreatures(e.target.checked);
                         if (e.target.checked) {
-                          newSet.delete(creature.name);
+                          setDisabledCreatures(new Set());
                         } else {
-                          newSet.add(creature.name);
+                          const allCreatures = new Set(parsedDeck.creatures.map(c => c.name));
+                          setDisabledCreatures(allCreatures);
                         }
-                        setDisabledCreatures(newSet);
                       }}
                     />
-                    <span style={{ marginLeft: '8px', fontWeight: 600 }}>
-                      {creature.quantity}x {creature.name}
-                    </span>
-                    <span style={{ marginLeft: '10px', fontSize: '0.875rem', color: '#6b7280' }}>
-                      +{creature.manaAmount} Mana, CMC {creature.cmc}
-                    </span>
+                    <span style={{ marginLeft: '8px' }}>Enable All Creatures</span>
                   </label>
-                  <div style={{ display: 'flex', alignItems: 'center', marginLeft: '10px' }}>
-                    {creature.produces.map(color => (
-                      <span key={color} style={{ marginLeft: '5px', fontSize: '1.2rem' }}>{getManaSymbol(color)}</span>
-                    ))}
-                  </div>
+                  {parsedDeck.creatures.map((creature, idx) => (
+                    <div key={idx} style={{
+                      padding: '8px 0',
+                      borderBottom: '1px solid #f3f4f6',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center'
+                    }}>
+                      <label style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
+                        <input
+                          type="checkbox"
+                          checked={includeCreatures && !disabledCreatures.has(creature.name)}
+                          onChange={(e) => {
+                            const newSet = new Set(disabledCreatures);
+                            if (e.target.checked) {
+                              newSet.delete(creature.name);
+                            } else {
+                              newSet.add(creature.name);
+                            }
+                            setDisabledCreatures(newSet);
+                          }}
+                        />
+                        <span style={{ marginLeft: '8px', fontWeight: 600 }}>
+                          {creature.quantity}x {creature.name}
+                        </span>
+                        <span style={{ marginLeft: '10px', fontSize: '0.875rem', color: '#6b7280' }}>
+                          +{creature.manaAmount} Mana, CMC {creature.cmc}
+                        </span>
+                      </label>
+                      <div style={{ display: 'flex', alignItems: 'center', marginLeft: '10px' }}>
+                        {creature.produces.map(color => (
+                          <span key={color} style={{ marginLeft: '5px', fontSize: '1.2rem' }}>{getManaSymbol(color)}</span>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          )}
-          
+              )}
+
             </div>
           )}
 
           {/* Exploration Effects Section Row */}
-          {(parsedDeck.exploration && parsedDeck.exploration.length > 0 ) && (
+          {(parsedDeck.exploration && parsedDeck.exploration.length > 0) && (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '20px', marginBottom: '20px', alignItems: 'start' }}>
-          {parsedDeck.exploration && parsedDeck.exploration.length > 0 && (
-            <div style={{
-              background: 'white',
-              padding: '20px',
-              borderRadius: '12px',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-            }}>
-              <h3 style={{ marginTop: 0 }}>🌳 Exploration Effects</h3>
-              <label style={{ display: 'block', marginBottom: '15px' }}>
-                <input
-                  type="checkbox"
-                  checked={includeExploration}
-                  onChange={(e) => {
-                    setIncludeExploration(e.target.checked);
-                    if (e.target.checked) {
-                      setDisabledExploration(new Set());
-                    } else {
-                      const allExploration = new Set(parsedDeck.exploration.map(c => c.name));
-                      setDisabledExploration(allExploration);
-                    }
-                  }}
-                />
-                <span style={{ marginLeft: '8px' }}>Enable All Exploration Effects</span>
-              </label>
-              {parsedDeck.exploration.map((exploration, idx) => (
-                <div key={idx} style={{ padding: '8px 0', borderBottom: '1px solid #f3f4f6' }}>
-                  <label>
+              {parsedDeck.exploration && parsedDeck.exploration.length > 0 && (
+                <div style={{
+                  background: 'white',
+                  padding: '20px',
+                  borderRadius: '12px',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+                }}>
+                  <h3 style={{ marginTop: 0 }}>🌳 Exploration Effects</h3>
+                  <label style={{ display: 'block', marginBottom: '15px' }}>
                     <input
                       type="checkbox"
-                      checked={includeExploration && !disabledExploration.has(exploration.name)}
+                      checked={includeExploration}
                       onChange={(e) => {
-                        const newSet = new Set(disabledExploration);
+                        setIncludeExploration(e.target.checked);
                         if (e.target.checked) {
-                          newSet.delete(exploration.name);
+                          setDisabledExploration(new Set());
                         } else {
-                          newSet.add(exploration.name);
+                          const allExploration = new Set(parsedDeck.exploration.map(c => c.name));
+                          setDisabledExploration(allExploration);
                         }
-                        setDisabledExploration(newSet);
                       }}
                     />
-                    <span style={{ marginLeft: '8px', fontWeight: 600 }}>
-                      {exploration.quantity}x {exploration.name}
-                    </span>
-                    <span style={{ marginLeft: '10px', fontSize: '0.875rem', color: '#6b7280' }}>
-                      {exploration.landsPerTurn} Lands/Turn, CMC {exploration.cmc}
-                    </span>
+                    <span style={{ marginLeft: '8px' }}>Enable All Exploration Effects</span>
                   </label>
+                  {parsedDeck.exploration.map((exploration, idx) => (
+                    <div key={idx} style={{ padding: '8px 0', borderBottom: '1px solid #f3f4f6' }}>
+                      <label>
+                        <input
+                          type="checkbox"
+                          checked={includeExploration && !disabledExploration.has(exploration.name)}
+                          onChange={(e) => {
+                            const newSet = new Set(disabledExploration);
+                            if (e.target.checked) {
+                              newSet.delete(exploration.name);
+                            } else {
+                              newSet.add(exploration.name);
+                            }
+                            setDisabledExploration(newSet);
+                          }}
+                        />
+                        <span style={{ marginLeft: '8px', fontWeight: 600 }}>
+                          {exploration.quantity}x {exploration.name}
+                        </span>
+                        <span style={{ marginLeft: '10px', fontSize: '0.875rem', color: '#6b7280' }}>
+                          {exploration.landsPerTurn} Lands/Turn, CMC {exploration.cmc}
+                        </span>
+                      </label>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          )}
-          
+              )}
+
             </div>
           )}
 
@@ -2996,45 +3018,45 @@ const MTGMonteCarloAnalyzer = () => {
               {[...parsedDeck.spells, ...parsedDeck.creatures, ...parsedDeck.artifacts, ...(parsedDeck.rituals || []), ...(parsedDeck.exploration || [])]
                 .sort((a, b) => a.cmc - b.cmc)
                 .map((card, idx) => (
-                <div 
-                  key={idx} 
-                  style={{ 
-                    padding: '8px',
-                    borderBottom: '1px solid #f3f4f6',
-                    cursor: 'pointer',
-                    background: selectedKeyCards.has(card.name) ? '#dbeafe' : 'transparent',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center'
-                  }}
-                  onClick={() => {
-                    const newSet = new Set(selectedKeyCards);
-                    if (newSet.has(card.name)) {
-                      newSet.delete(card.name);
-                    } else {
-                      newSet.add(card.name);
-                    }
-                    setSelectedKeyCards(newSet);
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
-                    <input
-                      type="checkbox"
-                      checked={selectedKeyCards.has(card.name)}
-                      readOnly
-                    />
-                    <span style={{ marginLeft: '8px', fontWeight: 600 }}>
-                      {card.quantity}x {card.name}
-                    </span>
-                    <span style={{ marginLeft: '10px', fontSize: '0.875rem', color: '#6b7280' }}>
-                      CMC {card.cmc}
-                    </span>
+                  <div
+                    key={idx}
+                    style={{
+                      padding: '8px',
+                      borderBottom: '1px solid #f3f4f6',
+                      cursor: 'pointer',
+                      background: selectedKeyCards.has(card.name) ? '#dbeafe' : 'transparent',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center'
+                    }}
+                    onClick={() => {
+                      const newSet = new Set(selectedKeyCards);
+                      if (newSet.has(card.name)) {
+                        newSet.delete(card.name);
+                      } else {
+                        newSet.add(card.name);
+                      }
+                      setSelectedKeyCards(newSet);
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
+                      <input
+                        type="checkbox"
+                        checked={selectedKeyCards.has(card.name)}
+                        readOnly
+                      />
+                      <span style={{ marginLeft: '8px', fontWeight: 600 }}>
+                        {card.quantity}x {card.name}
+                      </span>
+                      <span style={{ marginLeft: '10px', fontSize: '0.875rem', color: '#6b7280' }}>
+                        CMC {card.cmc}
+                      </span>
+                    </div>
+                    <div style={{ marginLeft: '10px', fontSize: '1.2rem' }}>
+                      {renderManaCost(card.manaCost)}
+                    </div>
                   </div>
-                  <div style={{ marginLeft: '10px', fontSize: '1.2rem' }}>
-                    {renderManaCost(card.manaCost)}
-                  </div>
-                </div>
-              ))}
+                ))}
             </div>
           )}
 
@@ -3047,7 +3069,7 @@ const MTGMonteCarloAnalyzer = () => {
             boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
           }}>
             <h3 style={{ marginTop: 0 }}>⚙️ Simulation Settings</h3>
-            
+
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '15px' }}>
               <div>
                 <label style={{ display: 'block', marginBottom: '5px', fontSize: '0.875rem', fontWeight: 600 }}>
@@ -3150,7 +3172,7 @@ const MTGMonteCarloAnalyzer = () => {
                 />
                 <span style={{ marginLeft: '8px', fontWeight: 600 }}>Enable Mulligan Logic</span>
               </label>
-              
+
               {enableMulligans && (
                 <div style={{ marginTop: '15px', paddingLeft: '10px', borderLeft: '3px solid #667eea' }}>
                   <div style={{ marginBottom: '15px' }}>
@@ -3166,7 +3188,7 @@ const MTGMonteCarloAnalyzer = () => {
                       <option value="vancouver">Vancouver Mulligan (draw N-1 cards)</option>
                     </select>
                   </div>
-                  
+
                   <div style={{ marginBottom: '15px' }}>
                     <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.875rem', fontWeight: 600 }}>
                       Mulligan Strategy
@@ -3182,76 +3204,76 @@ const MTGMonteCarloAnalyzer = () => {
                       <option value="custom">Custom Rules</option>
                     </select>
                   </div>
-                  
+
                   {mulliganStrategy === 'custom' && (
                     <div style={{ marginTop: '10px', padding: '10px', background: 'white', borderRadius: '6px' }}>
                       <div style={{ fontSize: '0.875rem', fontWeight: 600, marginBottom: '10px' }}>Custom Mulligan Rules:</div>
-                      
+
                       <label style={{ display: 'block', marginBottom: '8px' }}>
                         <input
                           type="checkbox"
                           checked={customMulliganRules.mulligan0Lands}
-                          onChange={(e) => setCustomMulliganRules({...customMulliganRules, mulligan0Lands: e.target.checked})}
+                          onChange={(e) => setCustomMulliganRules({ ...customMulliganRules, mulligan0Lands: e.target.checked })}
                         />
                         <span style={{ marginLeft: '8px', fontSize: '0.875rem' }}>Mulligan if 0 lands</span>
                       </label>
-                      
+
                       <label style={{ display: 'block', marginBottom: '8px' }}>
                         <input
                           type="checkbox"
                           checked={customMulliganRules.mulligan7Lands}
-                          onChange={(e) => setCustomMulliganRules({...customMulliganRules, mulligan7Lands: e.target.checked})}
+                          onChange={(e) => setCustomMulliganRules({ ...customMulliganRules, mulligan7Lands: e.target.checked })}
                         />
                         <span style={{ marginLeft: '8px', fontSize: '0.875rem' }}>Mulligan if 7 lands</span>
                       </label>
-                      
+
                       <label style={{ display: 'block', marginBottom: '8px' }}>
                         <input
                           type="checkbox"
                           checked={customMulliganRules.mulliganMinLands}
-                          onChange={(e) => setCustomMulliganRules({...customMulliganRules, mulliganMinLands: e.target.checked})}
+                          onChange={(e) => setCustomMulliganRules({ ...customMulliganRules, mulliganMinLands: e.target.checked })}
                         />
                         <span style={{ marginLeft: '8px', fontSize: '0.875rem' }}>Mulligan if less than </span>
                         <input
                           type="number"
                           value={customMulliganRules.minLandsThreshold}
-                          onChange={(e) => setCustomMulliganRules({...customMulliganRules, minLandsThreshold: parseInt(e.target.value)})}
+                          onChange={(e) => setCustomMulliganRules({ ...customMulliganRules, minLandsThreshold: parseInt(e.target.value) })}
                           min="0"
                           max="7"
                           style={{ width: '50px', marginLeft: '5px', padding: '4px', borderRadius: '4px', border: '1px solid #e5e7eb' }}
                         />
                         <span style={{ marginLeft: '5px', fontSize: '0.875rem' }}>lands</span>
                       </label>
-                      
+
                       <label style={{ display: 'block', marginBottom: '8px' }}>
                         <input
                           type="checkbox"
                           checked={customMulliganRules.mulliganMaxLands}
-                          onChange={(e) => setCustomMulliganRules({...customMulliganRules, mulliganMaxLands: e.target.checked})}
+                          onChange={(e) => setCustomMulliganRules({ ...customMulliganRules, mulliganMaxLands: e.target.checked })}
                         />
                         <span style={{ marginLeft: '8px', fontSize: '0.875rem' }}>Mulligan if more than </span>
                         <input
                           type="number"
                           value={customMulliganRules.maxLandsThreshold}
-                          onChange={(e) => setCustomMulliganRules({...customMulliganRules, maxLandsThreshold: parseInt(e.target.value)})}
+                          onChange={(e) => setCustomMulliganRules({ ...customMulliganRules, maxLandsThreshold: parseInt(e.target.value) })}
                           min="0"
                           max="7"
                           style={{ width: '50px', marginLeft: '5px', padding: '4px', borderRadius: '4px', border: '1px solid #e5e7eb' }}
                         />
                         <span style={{ marginLeft: '5px', fontSize: '0.875rem' }}>lands</span>
                       </label>
-                      
+
                       <label style={{ display: 'block', marginBottom: '8px' }}>
                         <input
                           type="checkbox"
                           checked={customMulliganRules.mulliganNoPlaysByTurn}
-                          onChange={(e) => setCustomMulliganRules({...customMulliganRules, mulliganNoPlaysByTurn: e.target.checked})}
+                          onChange={(e) => setCustomMulliganRules({ ...customMulliganRules, mulliganNoPlaysByTurn: e.target.checked })}
                         />
                         <span style={{ marginLeft: '8px', fontSize: '0.875rem' }}>Mulligan if no plays by turn </span>
                         <input
                           type="number"
                           value={customMulliganRules.noPlaysTurnThreshold}
-                          onChange={(e) => setCustomMulliganRules({...customMulliganRules, noPlaysTurnThreshold: parseInt(e.target.value)})}
+                          onChange={(e) => setCustomMulliganRules({ ...customMulliganRules, noPlaysTurnThreshold: parseInt(e.target.value) })}
                           min="1"
                           max="5"
                           style={{ width: '50px', marginLeft: '5px', padding: '4px', borderRadius: '4px', border: '1px solid #e5e7eb' }}
@@ -3286,7 +3308,7 @@ const MTGMonteCarloAnalyzer = () => {
       )}
 
       {/* Results Section */}
-      {simulationResults && chartData  && (
+      {simulationResults && chartData && (
         <div id="results-section">
           <div style={{
             background: 'white',
@@ -3301,7 +3323,7 @@ const MTGMonteCarloAnalyzer = () => {
             {enableMulligans && (
               <p>Mulligan Rate: {iterations > 0 ? ((simulationResults.mulligans / iterations) * 100).toFixed(1) : 0}%</p>
             )}
-            
+
             <button
               onClick={exportResultsAsPNG}
               style={{
@@ -3404,12 +3426,12 @@ const MTGMonteCarloAnalyzer = () => {
                   {Array.from(selectedKeyCards).map((cardName, idx) => {
                     const colors = ['#667eea', '#f59e0b', '#22c55e', '#dc2626', '#60a5fa'];
                     return (
-                      <Line 
+                      <Line
                         key={cardName}
-                        type="monotone" 
-                        dataKey={cardName} 
-                        stroke={colors[idx % colors.length]} 
-                        strokeWidth={2} 
+                        type="monotone"
+                        dataKey={cardName}
+                        stroke={colors[idx % colors.length]}
+                        strokeWidth={2}
                       />
                     );
                   })}
@@ -3431,26 +3453,26 @@ const MTGMonteCarloAnalyzer = () => {
               <p style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '15px' }}>
                 Showing example hands that can play key cards on turn {selectedTurnForSequences}
               </p>
-              
+
               {Object.entries(simulationResults.fastestPlaySequences).map(([cardName, sequencesByTurn]) => {
                 const sequencesForTurn = sequencesByTurn[selectedTurnForSequences];
-                
+
                 // Skip if no sequences exist for this turn
                 if (!sequencesForTurn || sequencesForTurn.length === 0) {
                   return (
                     <div key={cardName} style={{ marginBottom: '25px' }}>
-                      <h4 style={{ 
-                        margin: '0 0 10px 0', 
-                        fontSize: '1.1rem', 
+                      <h4 style={{
+                        margin: '0 0 10px 0',
+                        fontSize: '1.1rem',
                         color: '#667eea',
                         borderBottom: '2px solid #667eea',
                         paddingBottom: '8px'
                       }}>
                         {cardName}
                       </h4>
-                      <p style={{ 
-                        fontSize: '0.875rem', 
-                        color: '#9ca3af', 
+                      <p style={{
+                        fontSize: '0.875rem',
+                        color: '#9ca3af',
                         fontStyle: 'italic',
                         padding: '15px',
                         background: '#f9fafb',
@@ -3461,31 +3483,31 @@ const MTGMonteCarloAnalyzer = () => {
                     </div>
                   );
                 }
-                
+
                 return (
                   <div key={cardName} style={{ marginBottom: '25px' }}>
-                    <h4 style={{ 
-                      margin: '0 0 15px 0', 
-                      fontSize: '1.1rem', 
+                    <h4 style={{
+                      margin: '0 0 15px 0',
+                      fontSize: '1.1rem',
                       color: '#667eea',
                       borderBottom: '2px solid #667eea',
                       paddingBottom: '8px'
                     }}>
                       {cardName}
                     </h4>
-                    
+
                     {sequencesForTurn.map((data, seqIdx) => (
-                      <div key={seqIdx} style={{ 
-                        marginBottom: '15px', 
-                        padding: '15px', 
-                        background: '#f9fafb', 
+                      <div key={seqIdx} style={{
+                        marginBottom: '15px',
+                        padding: '15px',
+                        background: '#f9fafb',
                         borderRadius: '8px',
                         border: '2px solid #e5e7eb'
                       }}>
                         <p style={{ margin: '0 0 10px 0', fontSize: '0.875rem', color: '#6b7280' }}>
                           <strong>Example {seqIdx + 1}:</strong> Playable on turn {data.turn} ({data.manaAvailable} mana available)
                         </p>
-                        
+
                         {/* Opening Hand */}
                         <div style={{ marginBottom: '12px', padding: '10px', background: 'white', borderRadius: '6px' }}>
                           <p style={{ fontWeight: 600, margin: '0 0 6px 0', fontSize: '0.85rem', color: '#374151' }}>
@@ -3495,27 +3517,27 @@ const MTGMonteCarloAnalyzer = () => {
                             {data.openingHand.join(', ')}
                           </div>
                         </div>
-                        
+
                         {/* Turn by Turn */}
                         <div>
                           <p style={{ fontWeight: 600, marginBottom: '8px', fontSize: '0.9rem' }}>Turn-by-turn sequence:</p>
                           {data.sequence && data.sequence.map((turnLog, idx) => (
-                            <div key={idx} style={{ 
+                            <div key={idx} style={{
                               marginBottom: '8px',
                               paddingLeft: '10px',
                               borderLeft: '3px solid #667eea'
                             }}>
-                              <p style={{ 
-                                margin: '0 0 4px 0', 
-                                fontWeight: 600, 
+                              <p style={{
+                                margin: '0 0 4px 0',
+                                fontWeight: 600,
                                 fontSize: '0.85rem',
                                 color: '#374151'
                               }}>
                                 Turn {turnLog.turn}:
                               </p>
                               {turnLog.actions.length > 0 ? (
-                                <ul style={{ 
-                                  margin: '0', 
+                                <ul style={{
+                                  margin: '0',
                                   paddingLeft: '20px',
                                   fontSize: '0.8rem',
                                   color: '#6b7280'

@@ -1,0 +1,252 @@
+{
+  "database_name": "MTG_Commander_Master_Rituals",
+  "version": "2026.03.06",
+  "description": "Comprehensive database of one-shot mana acceleration spells (Rituals) for Commander.",
+  "rituals": [
+    {
+      "name": "The Black Rituals (Graveyard & Sacrifice)",
+      "color_identity": ["B"],
+      "behavior": { "logic": "burst_mana_black", "risk": "requires_resources" },
+      "items": [
+        { 
+          "name": "Dark Ritual", 
+          "mana_value": 1, 
+          "cost": "{B}", 
+          "produces": "{B}{B}{B}", 
+          "net_gain": "+2 Mana" 
+        },
+        { 
+          "name": "Cabal Ritual", 
+          "mana_value": 2, 
+          "cost": "{1}{B}", 
+          "produces": "{B}{B}{B} (or {B}{B}{B}{B}{B} with Threshold)", 
+          "condition": "7+ cards in graveyard" 
+        },
+        { 
+          "name": "Culling the Weak", 
+          "mana_value": 1, 
+          "cost": "{B}, Sacrifice a creature", 
+          "produces": "{B}{B}{B}{B}", 
+          "net_gain": "+3 Mana" 
+        },
+        { 
+          "name": "Rain of Filth", 
+          "mana_value": 1, 
+          "cost": "{B}", 
+          "logic": "all_in_sacrifice", 
+          "effect": "Until end of turn, sacrifice a land: Add {B}." 
+        },
+        { 
+          "name": "Bubbling Muck", 
+          "mana_value": 1, 
+          "cost": "{B}", 
+          "logic": "mana_doubler_turn", 
+          "effect": "Until end of turn, Swamps you control tap for an additional {B}." 
+        },
+        { 
+          "name": "Sacrifice", 
+          "mana_value": 1, 
+          "cost": "{B}, Sacrifice a creature", 
+          "produces": "{B} equal to sacrificed creature's mana value" 
+        },
+        { 
+          "name": "Burnt Offering", 
+          "mana_value": 1, 
+          "cost": "{B}, Sacrifice a creature", 
+          "produces": "{B} and/or {R} equal to sacrificed creature's mana value" 
+        }
+      ]
+    },
+    {
+      "name": "The Red Rituals (Speed & Storm)",
+      "color_identity": ["R"],
+      "behavior": { "logic": "burst_mana_red", "storm_synergy": true },
+      "items": [
+        { 
+          "name": "Jeska's Will", 
+          "mana_value": 3, 
+          "cost": "{2}{R}", 
+          "produces": "{R} for each card in target opponent's hand", 
+          "logic": "scaling_mana",
+          "note": "Ideally targeting blue player. Often produces 5-7 mana." 
+        },
+        { 
+          "name": "Mana Geyser", 
+          "mana_value": 5, 
+          "cost": "{3}{R}{R}", 
+          "produces": "{R} for each tapped land opponents control", 
+          "logic": "late_game_finisher" 
+        },
+        { 
+          "name": "Seething Song", 
+          "mana_value": 3, 
+          "cost": "{2}{R}", 
+          "produces": "{R}{R}{R}{R}{R}", 
+          "net_gain": "+2 Mana" 
+        },
+        { 
+          "name": "Desperate Ritual", 
+          "mana_value": 2, 
+          "cost": "{1}{R}", 
+          "produces": "{R}{R}{R}", 
+          "mechanic": "Splice onto Arcane" 
+        },
+        { 
+          "name": "Pyretic Ritual", 
+          "mana_value": 2, 
+          "cost": "{1}{R}", 
+          "produces": "{R}{R}{R}", 
+          "net_gain": "+1 Mana" 
+        },
+        { 
+          "name": "Rite of Flame", 
+          "mana_value": 1, 
+          "cost": "{R}", 
+          "produces": "{R}{R} (increases with copies in GY)", 
+          "net_gain": "+1 Mana" 
+        },
+        { 
+          "name": "Brightstone Ritual", 
+          "mana_value": 1, 
+          "cost": "{R}", 
+          "produces": "{R} for each Goblin you control", 
+          "logic": "tribal_burst" 
+        },
+        { 
+          "name": "Battle Hymn", 
+          "mana_value": 2, 
+          "cost": "{1}{R}", 
+          "produces": "{R} for each creature you control", 
+          "logic": "go_wide_payoff" 
+        },
+        { 
+          "name": "Inner Fire", 
+          "mana_value": 4, 
+          "cost": "{3}{R}", 
+          "produces": "{R} for each card in your hand" 
+        }
+      ]
+    },
+    {
+      "name": "Treasure Rituals (Modern Era)",
+      "behavior": { "logic": "create_treasures", "fixing": true },
+      "items": [
+        { 
+          "name": "Dockside Extortionist", 
+          "mana_value": 2, 
+          "type": "Creature",
+          "color_identity": ["R"], 
+          "effect": "Create X Treasures (X is artifacts/enchantments opponents control)" 
+        },
+        { 
+          "name": "Brass's Bounty", 
+          "mana_value": 7, 
+          "color_identity": ["R"], 
+          "effect": "Create Treasure token for each land you control", 
+          "logic": "late_game_doubler" 
+        },
+        { 
+          "name": "Unexpected Windfall", 
+          "mana_value": 4, 
+          "cost": "{2}{R}{R}, Discard a card", 
+          "produces": "2 Treasures", 
+          "note": "Mana neutral, card selection positive" 
+        },
+        { 
+          "name": "Big Score", 
+          "mana_value": 4, 
+          "cost": "{2}{R}{R}, Discard a card", 
+          "produces": "2 Treasures" 
+        },
+        { 
+          "name": "Strike It Rich", 
+          "mana_value": 1, 
+          "cost": "{R}", 
+          "produces": "1 Treasure", 
+          "mechanic": "Flashback" 
+        }
+      ]
+    },
+    {
+      "name": "Blue & High Tide Package",
+      "color_identity": ["U"],
+      "behavior": { "logic": "untap_engine" },
+      "items": [
+        { 
+          "name": "High Tide", 
+          "mana_value": 1, 
+          "cost": "{U}", 
+          "logic": "mana_doubler_turn", 
+          "effect": "Until end of turn, Islands you control tap for an additional {U}." 
+        },
+        { 
+          "name": "Turnabout", 
+          "mana_value": 4, 
+          "cost": "{2}{U}{U}", 
+          "effect": "Untap all lands (or artifacts/creatures) target player controls", 
+          "logic": "infinite_mana_combo_piece" 
+        },
+        { 
+          "name": "Dramatic Reversal", 
+          "mana_value": 2, 
+          "cost": "{1}{U}", 
+          "effect": "Untap all nonland permanents you control", 
+          "logic": "iso_rev_combo_piece",
+          "note": "Combos with Isochron Scepter and mana rocks." 
+        },
+        { 
+          "name": "Frantic Search", 
+          "mana_value": 3, 
+          "cost": "{2}{U}", 
+          "effect": "Draw 2, discard 2, untap 3 lands", 
+          "logic": "free_spell" 
+        },
+        { 
+          "name": "Time Spiral", 
+          "mana_value": 6, 
+          "cost": "{4}{U}{U}", 
+          "effect": "Shuffle GY and Hand, Draw 7, Untap 6 lands", 
+          "logic": "wheel_and_reset" 
+        }
+      ]
+    },
+    {
+      "name": "Filtering & Miscellaneous",
+      "behavior": { "logic": "mana_fixing_cantrip" },
+      "items": [
+        { 
+          "name": "Manamorphose", 
+          "mana_value": 2, 
+          "color_identity": ["R", "G"], 
+          "cost": "{1}{R/G}", 
+          "produces": "Two mana of any color combination", 
+          "effect": "Draw a card", 
+          "net_gain": "Neutral (Fixing + Storm Count)" 
+        },
+        { 
+          "name": "Channel", 
+          "mana_value": 2, 
+          "color_identity": ["G"], 
+          "cost": "{G}{G}", 
+          "effect": "Pay 1 life: Add {C}", 
+          "status": "Often Banned in Commander (Check Banlist)" 
+        },
+        { 
+          "name": "Squandered Resources", 
+          "mana_value": 2, 
+          "type": "Enchantment",
+          "color_identity": ["B", "G"], 
+          "effect": "Sacrifice a land: Add one mana of any type the land produced." 
+        },
+        { 
+          "name": "Underworld Breach", 
+          "mana_value": 2, 
+          "type": "Enchantment",
+          "color_identity": ["R"], 
+          "logic": "ritual_enabler", 
+          "effect": "Escape allows recasting rituals from graveyard" 
+        }
+      ]
+    }
+  ]
+}

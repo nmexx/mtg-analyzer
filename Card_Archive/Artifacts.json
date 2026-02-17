@@ -1,0 +1,357 @@
+{
+  "database_name": "MTG_Commander_Master_Mana_Artifacts",
+  "version": "2026.03.01",
+  "description": "Comprehensive database of relevant non-creature mana artifacts for Commander.",
+  "artifacts": [
+    {
+      "name": "The Fast Mana (S-Tier)",
+      "mana_value": 0,
+      "behavior": { "is_mana_positive": true, "etb_tapped": false, "logic": "acceleration" },
+      "items": [
+        { 
+          "name": "Mana Crypt", 
+          "mana_value": 0, 
+          "color_identity": ["C"],
+          "mana_abilities": [{ "cost": "{T}", "produces": "{C}{C}" }], 
+          "upkeep_trigger": "Flip coin: tails deals 3 damage" 
+        },
+        { 
+          "name": "Mox Diamond", 
+          "mana_value": 0, 
+          "color_identity": ["C"],
+          "behavior": { "etb_cost": "Discard a land card" },
+          "mana_abilities": [{ "cost": "{T}", "produces": "Any Color" }] 
+        },
+        { 
+          "name": "Chrome Mox", 
+          "mana_value": 0, 
+          "color_identity": ["C"],
+          "behavior": { "etb_cost": "Imprint nonartifact, nonland card" },
+          "mana_abilities": [{ "cost": "{T}", "produces": "Colors of imprinted card" }] 
+        },
+        { 
+          "name": "Mox Opal", 
+          "mana_value": 0, 
+          "color_identity": ["C"],
+          "behavior": { "condition": "Metalcraft (control 3+ artifacts)" },
+          "mana_abilities": [{ "cost": "{T}", "produces": "Any Color" }] 
+        },
+        { 
+          "name": "Mox Amber", 
+          "mana_value": 0, 
+          "color_identity": ["C"],
+          "behavior": { "condition": "Control legendary creature/planeswalker" },
+          "mana_abilities": [{ "cost": "{T}", "produces": "Any color among legendary permanents you control" }] 
+        },
+        { 
+          "name": "Lotus Petal", 
+          "mana_value": 0, 
+          "color_identity": ["C"],
+          "mana_abilities": [{ "cost": "{T}, Sacrifice", "produces": "Any Color" }] 
+        },
+        { 
+          "name": "Lion's Eye Diamond", 
+          "mana_value": 0, 
+          "color_identity": ["C"],
+          "mana_abilities": [{ "cost": "Discard hand, Sacrifice", "produces": "{A}{A}{A}", "timing": "Instant only" }] 
+        },
+        { 
+          "name": "Jeweled Lotus", 
+          "mana_value": 0, 
+          "color_identity": ["C"],
+          "mana_abilities": [{ "cost": "{T}, Sacrifice", "produces": "{A}{A}{A}", "restriction": "Spend only to cast Commander" }] 
+        }
+      ]
+    },
+    {
+      "name": "Sol Ring & Vaults",
+      "mana_value": 1,
+      "behavior": { "is_mana_positive": true },
+      "items": [
+        { 
+          "name": "Sol Ring", 
+          "mana_value": 1, 
+          "color_identity": ["C"],
+          "mana_abilities": [{ "cost": "{T}", "produces": "{C}{C}" }] 
+        },
+        { 
+          "name": "Mana Vault", 
+          "mana_value": 1, 
+          "color_identity": ["C"],
+          "behavior": { "untap_step": "manual_only" }, 
+          "mana_abilities": [{ "cost": "{T}", "produces": "{C}{C}{C}" }],
+          "activated_abilities": [{ "cost": "{4}", "effect": "Untap Mana Vault", "timing": "Upkeep only" }]
+        },
+        { 
+          "name": "Grim Monolith", 
+          "mana_value": 2, 
+          "color_identity": ["C"],
+          "behavior": { "untap_step": "manual_only" }, 
+          "mana_abilities": [{ "cost": "{T}", "produces": "{C}{C}{C}" }],
+          "activated_abilities": [{ "cost": "{4}", "effect": "Untap Grim Monolith" }]
+        },
+        { 
+          "name": "Basalt Monolith", 
+          "mana_value": 3, 
+          "color_identity": ["C"],
+          "behavior": { "untap_step": "manual_only", "logic": "infinite_mana_combo_piece" }, 
+          "mana_abilities": [{ "cost": "{T}", "produces": "{C}{C}{C}" }],
+          "activated_abilities": [{ "cost": "{3}", "effect": "Untap Basalt Monolith" }]
+        }
+      ]
+    },
+    {
+      "name": "Signets (Guild Cycle)",
+      "mana_value": 2,
+      "behavior": { "logic": "filter_filter", "etb_tapped": false },
+      "description": "Requires generic mana input to activate.",
+      "items": [
+        { "name": "Arcane Signet", "color_identity": ["C"], "mana_abilities": [{ "cost": "{T}", "produces": "Any color in Commander identity" }] },
+        { "name": "Azorius Signet", "color_identity": ["W", "U"], "mana_abilities": [{ "cost": "{1}, {T}", "produces": "{W}{U}" }] },
+        { "name": "Dimir Signet", "color_identity": ["U", "B"], "mana_abilities": [{ "cost": "{1}, {T}", "produces": "{U}{B}" }] },
+        { "name": "Rakdos Signet", "color_identity": ["B", "R"], "mana_abilities": [{ "cost": "{1}, {T}", "produces": "{B}{R}" }] },
+        { "name": "Gruul Signet", "color_identity": ["R", "G"], "mana_abilities": [{ "cost": "{1}, {T}", "produces": "{R}{G}" }] },
+        { "name": "Selesnya Signet", "color_identity": ["G", "W"], "mana_abilities": [{ "cost": "{1}, {T}", "produces": "{G}{W}" }] },
+        { "name": "Orzhov Signet", "color_identity": ["W", "B"], "mana_abilities": [{ "cost": "{1}, {T}", "produces": "{W}{B}" }] },
+        { "name": "Izzet Signet", "color_identity": ["U", "R"], "mana_abilities": [{ "cost": "{1}, {T}", "produces": "{U}{R}" }] },
+        { "name": "Golgari Signet", "color_identity": ["B", "G"], "mana_abilities": [{ "cost": "{1}, {T}", "produces": "{B}{G}" }] },
+        { "name": "Boros Signet", "color_identity": ["R", "W"], "mana_abilities": [{ "cost": "{1}, {T}", "produces": "{R}{W}" }] },
+        { "name": "Simic Signet", "color_identity": ["G", "U"], "mana_abilities": [{ "cost": "{1}, {T}", "produces": "{G}{U}" }] }
+      ]
+    },
+    {
+      "name": "Talismans (Pain Cycle)",
+      "mana_value": 2,
+      "behavior": { "logic": "pain_mana", "etb_tapped": false },
+      "items": [
+        { "name": "Talisman of Progress", "color_identity": ["W", "U"], "mana_abilities": [{ "cost": "{T}", "produces": "{C}" }, { "cost": "{T}", "produces": "{W} or {U}", "damage": 1 }] },
+        { "name": "Talisman of Dominance", "color_identity": ["U", "B"], "mana_abilities": [{ "cost": "{T}", "produces": "{C}" }, { "cost": "{T}", "produces": "{U} or {B}", "damage": 1 }] },
+        { "name": "Talisman of Indulgence", "color_identity": ["B", "R"], "mana_abilities": [{ "cost": "{T}", "produces": "{C}" }, { "cost": "{T}", "produces": "{B} or {R}", "damage": 1 }] },
+        { "name": "Talisman of Impulse", "color_identity": ["R", "G"], "mana_abilities": [{ "cost": "{T}", "produces": "{C}" }, { "cost": "{T}", "produces": "{R} or {G}", "damage": 1 }] },
+        { "name": "Talisman of Unity", "color_identity": ["G", "W"], "mana_abilities": [{ "cost": "{T}", "produces": "{C}" }, { "cost": "{T}", "produces": "{G} or {W}", "damage": 1 }] },
+        { "name": "Talisman of Hierarchy", "color_identity": ["W", "B"], "mana_abilities": [{ "cost": "{T}", "produces": "{C}" }, { "cost": "{T}", "produces": "{W} or {B}", "damage": 1 }] },
+        { "name": "Talisman of Creativity", "color_identity": ["U", "R"], "mana_abilities": [{ "cost": "{T}", "produces": "{C}" }, { "cost": "{T}", "produces": "{U} or {R}", "damage": 1 }] },
+        { "name": "Talisman of Resilience", "color_identity": ["B", "G"], "mana_abilities": [{ "cost": "{T}", "produces": "{C}" }, { "cost": "{T}", "produces": "{B} or {G}", "damage": 1 }] },
+        { "name": "Talisman of Conviction", "color_identity": ["R", "W"], "mana_abilities": [{ "cost": "{T}", "produces": "{C}" }, { "cost": "{T}", "produces": "{R} or {W}", "damage": 1 }] },
+        { "name": "Talisman of Curiosity", "color_identity": ["G", "U"], "mana_abilities": [{ "cost": "{T}", "produces": "{C}" }, { "cost": "{T}", "produces": "{G} or {U}", "damage": 1 }] }
+      ]
+    },
+    {
+      "name": "Diamonds (Tap Cycle)",
+      "mana_value": 2,
+      "behavior": { "etb_tapped": true },
+      "items": [
+        { "name": "Marble Diamond", "color_identity": ["W"], "mana_abilities": [{ "cost": "{T}", "produces": "{W}" }] },
+        { "name": "Sky Diamond", "color_identity": ["U"], "mana_abilities": [{ "cost": "{T}", "produces": "{U}" }] },
+        { "name": "Charcoal Diamond", "color_identity": ["B"], "mana_abilities": [{ "cost": "{T}", "produces": "{B}" }] },
+        { "name": "Fire Diamond", "color_identity": ["R"], "mana_abilities": [{ "cost": "{T}", "produces": "{R}" }] },
+        { "name": "Moss Diamond", "color_identity": ["G"], "mana_abilities": [{ "cost": "{T}", "produces": "{G}" }] }
+      ]
+    },
+    {
+      "name": "Medallions (Cost Reducers)",
+      "mana_value": 2,
+      "behavior": { "logic": "cost_reduction", "produces_mana": false },
+      "items": [
+        { "name": "Pearl Medallion", "color_identity": ["W"], "effect": "White spells cost {1} less" },
+        { "name": "Sapphire Medallion", "color_identity": ["U"], "effect": "Blue spells cost {1} less" },
+        { "name": "Jet Medallion", "color_identity": ["B"], "effect": "Black spells cost {1} less" },
+        { "name": "Ruby Medallion", "color_identity": ["R"], "effect": "Red spells cost {1} less" },
+        { "name": "Emerald Medallion", "color_identity": ["G"], "effect": "Green spells cost {1} less" }
+      ]
+    },
+    {
+      "name": "Utility 2-MV Rocks",
+      "mana_value": 2,
+      "items": [
+        { 
+          "name": "Fellwar Stone", 
+          "color_identity": ["C"], 
+          "mana_abilities": [{ "cost": "{T}", "produces": "Any color opponent's land could produce" }] 
+        },
+        { 
+          "name": "Mind Stone", 
+          "color_identity": ["C"], 
+          "mana_abilities": [{ "cost": "{T}", "produces": "{C}" }],
+          "activated_abilities": [{ "cost": "{1}, {T}, Sacrifice", "effect": "Draw a card" }]
+        },
+        { 
+          "name": "Thought Vessel", 
+          "color_identity": ["C"], 
+          "mana_abilities": [{ "cost": "{T}", "produces": "{C}" }],
+          "passive": "No maximum hand size"
+        },
+        { 
+          "name": "Liquimetal Torque", 
+          "color_identity": ["C"], 
+          "mana_abilities": [{ "cost": "{T}", "produces": "{C}" }],
+          "activated_abilities": [{ "cost": "{T}", "effect": "Target nonland permanent becomes an artifact until EOT" }]
+        },
+        { 
+          "name": "Prismatic Lens", 
+          "color_identity": ["C"], 
+          "mana_abilities": [{ "cost": "{T}", "produces": "{C}" }, { "cost": "{1}, {T}", "produces": "Any Color" }] 
+        },
+        { 
+          "name": "Everflowing Chalice", 
+          "mana_value": 0, 
+          "behavior": { "multikicker": 2 }, 
+          "mana_abilities": [{ "cost": "{T}", "produces": "{C} for each charge counter" }] 
+        }
+      ]
+    },
+    {
+      "name": "3-MV Staples (Fixing & Utility)",
+      "mana_value": 3,
+      "items": [
+        { 
+          "name": "Chromatic Lantern", 
+          "color_identity": ["C"], 
+          "mana_abilities": [{ "cost": "{T}", "produces": "Any Color" }],
+          "passive": "Lands you control have '{T}: Add one mana of any color'"
+        },
+        { 
+          "name": "Commander's Sphere", 
+          "color_identity": ["C"], 
+          "mana_abilities": [{ "cost": "{T}", "produces": "Any color in commander identity" }],
+          "activated_abilities": [{ "cost": "Sacrifice", "effect": "Draw a card" }]
+        },
+        { 
+          "name": "Heraldic Banner", 
+          "color_identity": ["C"], 
+          "behavior": { "etb_choice": "Choose a color" },
+          "mana_abilities": [{ "cost": "{T}", "produces": "Chosen Color" }],
+          "passive": "Creatures of chosen color get +1/+0"
+        },
+        { 
+          "name": "Cursed Mirror", 
+          "color_identity": ["R"], 
+          "mana_abilities": [{ "cost": "{T}", "produces": "{R}" }],
+          "behavior": { "etb_effect": "Becomes copy of target creature until EOT, gains haste" }
+        },
+        { 
+          "name": "Relic of Legends", 
+          "color_identity": ["C"], 
+          "mana_abilities": [
+            { "cost": "{T}", "produces": "Any Color" },
+            { "cost": "Tap an untapped legendary creature you control", "produces": "Any Color" }
+          ]
+        },
+        { 
+          "name": "Patriar's Seal", 
+          "color_identity": ["C"], 
+          "mana_abilities": [{ "cost": "{T}", "produces": "Any Color" }],
+          "activated_abilities": [{ "cost": "{1}, {T}", "effect": "Untap target legendary creature" }]
+        },
+        { 
+          "name": "Decanter of Endless Water", 
+          "color_identity": ["C"], 
+          "mana_abilities": [{ "cost": "{T}", "produces": "Any Color" }],
+          "passive": "No maximum hand size"
+        },
+        { 
+          "name": "Dragon's Hoard", 
+          "color_identity": ["C"], 
+          "mana_abilities": [{ "cost": "{T}", "produces": "Any Color" }],
+          "trigger": "Dragon ETB: Put gold counter",
+          "activated_abilities": [{ "cost": "{T}, Remove gold counter", "effect": "Draw a card" }]
+        }
+      ]
+    },
+    {
+      "name": "Big Mana & Scaling Rocks",
+      "mana_value": 4,
+      "items": [
+        { 
+          "name": "Thran Dynamo", 
+          "mana_value": 4, 
+          "color_identity": ["C"], 
+          "mana_abilities": [{ "cost": "{T}", "produces": "{C}{C}{C}" }] 
+        },
+        { 
+          "name": "Gilded Lotus", 
+          "mana_value": 5, 
+          "color_identity": ["C"], 
+          "mana_abilities": [{ "cost": "{T}", "produces": "{A}{A}{A} (Three of one color)" }] 
+        },
+        { 
+          "name": "Nyx Lotus", 
+          "mana_value": 4, 
+          "color_identity": ["C"], 
+          "behavior": { "etb_tapped": true },
+          "mana_abilities": [{ "cost": "{T}", "produces": "Mana equal to devotion to chosen color" }] 
+        },
+        { 
+          "name": "The Great Henge", 
+          "mana_value": 9, 
+          "color_identity": ["G"], 
+          "behavior": { "cost_reduction": "Less equal to greatest power among creatures" },
+          "mana_abilities": [{ "cost": "{T}", "produces": "{G}{G}, Gain 2 life" }],
+          "trigger": "Creature ETB: Put +1/+1 counter and draw card"
+        },
+        { 
+          "name": "Forsaken Monument", 
+          "mana_value": 5, 
+          "color_identity": ["C"], 
+          "passive": "Whenever you tap permanent for {C}, add {C} (Total +1)",
+          "other": "Colorless creatures +2/+2, Gain 2 life on colorless spell"
+        },
+        { 
+          "name": "Coveted Jewel", 
+          "mana_value": 6, 
+          "color_identity": ["C"], 
+          "mana_abilities": [{ "cost": "{T}", "produces": "{A}{A}{A} (Three of one color)" }],
+          "trigger": "ETB: Draw 3 cards. Opponent steals it if they don't block you."
+        }
+      ]
+    },
+    {
+      "name": "2025-2026 Specials & Conversation Adds",
+      "items": [
+        { 
+          "name": "Firdoch Core", 
+          "mana_value": 3, 
+          "color_identity": ["C"], 
+          "behavior": { "is_kindred": true, "has_changeling": true }, 
+          "mana_abilities": [{ "cost": "{T}", "produces": "{C}" }], 
+          "note": "Untaps via kindred triggers" 
+        },
+        { 
+          "name": "The Soul Stone", 
+          "mana_value": 4, 
+          "color_identity": ["C"],
+          "mana_abilities": [{ "cost": "{T}", "produces": "Any Color" }], 
+          "upkeep_trigger": "Return creature from graveyard to hand (once per cycle)" 
+        },
+        {
+          "name": "The Water Crystal",
+          "mana_value": 3,
+          "color_identity": ["U"],
+          "mana_abilities": [{ "cost": "{T}", "produces": "{U} or {C}" }],
+          "passive": "Increases mill efficiency"
+        },
+        {
+          "name": "The Fire Crystal",
+          "mana_value": 3,
+          "color_identity": ["R"],
+          "mana_abilities": [{ "cost": "{T}", "produces": "{R} or {C}" }],
+          "passive": "Creatures you control have haste"
+        },
+        {
+          "name": "The Wind Crystal",
+          "mana_value": 3,
+          "color_identity": ["W"],
+          "mana_abilities": [{ "cost": "{T}", "produces": "{W} or {C}" }],
+          "passive": "Creatures you control have flying"
+        },
+        {
+          "name": "The Earth Crystal",
+          "mana_value": 3,
+          "color_identity": ["G"],
+          "mana_abilities": [{ "cost": "{T}", "produces": "{G} or {C}" }],
+          "passive": "Creatures you control have trample"
+        }
+      ]
+    }
+  ]
+}
