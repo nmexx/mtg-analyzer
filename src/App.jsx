@@ -534,6 +534,7 @@ const MTGMonteCarloAnalyzer = () => {
     let isHideawayFetch = false;
     let fetchesOnlyBasics = false;
     let fetchesTwoLands = false;
+    let fetchcost = 0;
     let fetchedLandEntersTapped = false; // Does the fetched land enter tapped?
     
     if (isFetch) {
@@ -561,6 +562,8 @@ const MTGMonteCarloAnalyzer = () => {
         fetchType = 'mana_cost';
         fetchesOnlyBasics = true;
         fetchesTwoLands = true;
+        fetchcost = 2;
+        entersTappedAlways = true;
         fetchedLandEntersTapped = true; // Lands enter tapped
         // Can fetch any basic type (all 5 colors)
         fetchColors = ['W', 'U', 'B', 'R', 'G'];
@@ -577,6 +580,7 @@ const MTGMonteCarloAnalyzer = () => {
       else if (name.includes('panorama')) {
         fetchType = 'mana_cost';
         fetchesOnlyBasics = true;
+        fetchcost = 1;
         fetchedLandEntersTapped = true; // Lands enter tapped
         
         // Parse which basic types from oracle text
@@ -593,6 +597,7 @@ const MTGMonteCarloAnalyzer = () => {
                name !== 'myriad landscape' && name !== 'warped landscape' && name !== 'blasted landscape') {
         fetchType = 'mana_cost';
         fetchesOnlyBasics = true;
+        fetchcost = 1;
         fetchedLandEntersTapped = true; // Lands enter tapped
         
         // Parse which basic types from oracle text
@@ -614,9 +619,9 @@ const MTGMonteCarloAnalyzer = () => {
         fetchColors = ['W', 'U', 'B', 'R', 'G'];
       }
       // Regular fetch land detection
-      else if (oracleText.includes('pay 1 life') && !oracleText.includes('tapped')) {
+      else if (oracleText.toLowerCase().includes('pay 1 life') && !oracleText.toLowerCase().includes('tapped')) {
         fetchType = 'classic';
-      } else if (oracleText.includes('pay 1 life') && oracleText.includes('tapped')) {
+      } else if (oracleText.toLowerCase().includes('pay 1 life') && oracleText.toLowerCase().includes('tapped')) {
         fetchType = 'slow';
       } else if (oracleText.match(/\{[0-9]+\}/)) {
         fetchType = 'mana_cost';
@@ -802,6 +807,7 @@ const MTGMonteCarloAnalyzer = () => {
       isHideawayFetch,
       landSubtypes,
       produces,
+      fetchcost, // How much it costs for fetching 
       manaAmount, // How much mana this land produces (1 for normal, 2 for Ancient Tomb/City)
       entersTappedAlways,
       isShockLand,
@@ -1528,7 +1534,7 @@ const MTGMonteCarloAnalyzer = () => {
           
           landsPlayedThisTurn++;
         }
-        
+
         // Phase 4 Fetch
         //const lifeLoss = FetchLand(battlefield, library, turn, turnLog, keyCardNames, deckToParse);
 
@@ -1560,13 +1566,13 @@ const MTGMonteCarloAnalyzer = () => {
         }
         
         // Pain Lands: deal 1 damage when tapped for colored mana
-        // Simplified: assume all tapped pain lands dealt damage this turn
-        const tappedPainLands = battlefield.filter(p =>
-          p.card.isLand && p.card.isPainLand && p.tapped
+        // Simplified: assume all  pain lands dealt damage this under turn 5 turn
+        const PainLands = battlefield.filter(p =>
+          p.card.isLand && p.card.isPainLand
         ).length;
-        const painLandDamage = tappedPainLands * 1;
+        const painLandDamage = PainLands * 1;
         
-        if (painLandDamage > 0) {
+        if (painLandDamage > 0 && turn <= 5 ) {
           cumulativeLifeLoss += painLandDamage;
           turnLog.lifeLoss += painLandDamage;
           turnLog.actions.push(`Pain Land damage: -${painLandDamage} life`);
@@ -1694,9 +1700,10 @@ const MTGMonteCarloAnalyzer = () => {
     
     if (playableLands.length === 0) return null;
 
-    // Priority: fetch > untapped non-bounce > bounce (with non-bounce available) > tapped
-    const fetches = playableLands.filter(l => l.isFetch);
-    if (fetches.length > 0) return fetches[0];
+    // Priority: fetch (mana costing fetches only if mana available)> untapped non-bounce >bounce (with non-bounce available) > tapped
+    const fetches = playableLands.filter(l => l.isFetch && l.fetchType !== 'mana_cost');
+    const untappedLands = battlefield.filter(d => d.isLand && !d.tapped);
+    if (fetches.length > 0 && untappedLands.length >= fetches[0].fetchcost ) return fetches[0];
 
     const untappedNonBounce = playableLands.filter(l => 
       !l.entersTappedAlways && 
@@ -1741,7 +1748,7 @@ const MTGMonteCarloAnalyzer = () => {
       // Hideaway fetch lands (Maestros Theater, etc.) - special handling
       if (land.isHideawayFetch) {
         // Hideaway lands enter tapped, then immediately sacrifice to fetch a basic tapped
-        const fetchedLand = findBestLandToFetch(land, library, battlefield, keyCardNames, parsedDeck);
+        const fetchedLand = findBestLandToFetch(land, library, battlefield, keyCardNames, parsedDeck, turn);
         
         if (fetchedLand) {
           const libIndex = library.indexOf(fetchedLand);
@@ -1775,7 +1782,7 @@ const MTGMonteCarloAnalyzer = () => {
       }
       // Regular fetch land logic
       else {
-        const fetchedLand = findBestLandToFetch(land, library, battlefield, keyCardNames, parsedDeck);
+        const fetchedLand = findBestLandToFetch(land, library, battlefield, keyCardNames, parsedDeck, turn);
         
         if (fetchedLand) {
           const libIndex = library.indexOf(fetchedLand);
@@ -1797,15 +1804,15 @@ const MTGMonteCarloAnalyzer = () => {
             enteredTapped: entersTapped
           });
 
-          // Shock land decision (only if not forced tapped by fetch)
-          if (fetchedLand.isShockLand && turn <= 5 && entersTapped && !land.fetchedLandEntersTapped) {
+          // Shock land decision (only if not forced tapped by fetch before turn 6 always untapped)
+          if (fetchedLand.isShockLand && turn <= 6 && entersTapped && !land.fetchedLandEntersTapped) {
             battlefield[battlefield.length - 1].tapped = false;
             battlefield[battlefield.length - 1].enteredTapped = false;
             lifeLoss += 2;
           }
 
           // Myriad Landscape fetches TWO basics of the same type
-          if (land.fetchesTwoLands) {
+          if (land.fetchesTwoLands && !land.tapped) {
             // Find a second basic of the SAME type
             const secondLand = library.find(card => 
               card.isLand && 
@@ -1890,7 +1897,7 @@ const MTGMonteCarloAnalyzer = () => {
       });
 
       // Shock land decision
-      if (land.isShockLand && turn <= 5 && entersTapped) {
+      if (land.isShockLand && turn <= 6 && entersTapped) {
         battlefield[battlefield.length - 1].tapped = false;
         battlefield[battlefield.length - 1].enteredTapped = false;
         lifeLoss += 2;
@@ -1932,7 +1939,7 @@ const MTGMonteCarloAnalyzer = () => {
     return lifeLoss;
   };
 
-  const findBestLandToFetch = (fetchLand, library, battlefield, keyCardNames, parsedDeck) => {
+  const findBestLandToFetch = (fetchLand, library, battlefield, keyCardNames, parsedDeck, turn) => {
     // For hideaway fetches and basic-only fetches, only fetch basic lands
     const onlyBasics = fetchLand.isHideawayFetch || fetchLand.fetchesOnlyBasics;
     
@@ -2009,15 +2016,21 @@ const MTGMonteCarloAnalyzer = () => {
     const scoredLands = eligibleLands.map(land => {
       let score = 0;
       
-      // Highest priority: Shock lands that produce missing colors
+      // Highest priority: lands that produce missing colors
       const producesNeededColor = (land.produces || []).some(color => missingColors.has(color));
       
-      if (land.isShockLand && producesNeededColor) {
-        score += 1000;
-      } else if (land.isShockLand) {
-        score += 500;
-      } else if (producesNeededColor) {
+      if (producesNeededColor) {
         score += 300;
+      }
+
+     // Bonus for early triomes
+      if (turn <= 2 && ((land.produces || []).length > 2)) {
+        score += 1000;
+      }
+
+      // Bonus for not shock late
+      if (turn >= 6 && (land.isShockLand)) {
+        score -= 100;
       }
       
       // Bonus for dual lands
@@ -2027,7 +2040,7 @@ const MTGMonteCarloAnalyzer = () => {
       
       // Bonus for producing multiple missing colors
       const missingColorCount = (land.produces || []).filter(c => missingColors.has(c)).length;
-      score += missingColorCount * 50;
+      score += missingColorCount * 250;
       
       return { land, score };
     });
