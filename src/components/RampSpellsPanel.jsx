@@ -13,6 +13,7 @@
  */
 
 import React from 'react';
+import CardTooltip from './CardTooltip';
 
 const RampSpellsPanel = ({
   parsedDeck,
@@ -56,7 +57,7 @@ const RampSpellsPanel = ({
                 setDisabledRampSpells(newSet);
               }}
             />
-            <span className="card-name">{ramp.quantity}x {ramp.name}</span>
+            <CardTooltip name={ramp.name}><span className="card-name">{ramp.quantity}x {ramp.name}</span></CardTooltip>
             <span className="card-meta">
               +{ramp.landsToAdd} land{ramp.landsToAdd !== 1 ? 's' : ''}{ramp.landsTapped ? ' (tapped)' : ' (untapped)'}
               {ramp.fetchFilter === 'basic'   ? ' · basics only'                            : ''}

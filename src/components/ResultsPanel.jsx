@@ -17,6 +17,7 @@
  */
 
 import React from 'react';
+import CardTooltip from './CardTooltip';
 import {
   LineChart, Line,
   XAxis, YAxis,
@@ -32,6 +33,7 @@ const ResultsPanel = ({
   selectedKeyCards,
   selectedTurnForSequences,
   exportResultsAsPNG,
+  exportResultsAsCSV,
   renderSequenceBody,
 }) => {
   if (!simulationResults || !chartData) return null;
@@ -51,9 +53,14 @@ const ResultsPanel = ({
               : 0}%
           </p>
         )}
-        <button onClick={exportResultsAsPNG} className="btn-success">
-          📸 Export Results as PNG
-        </button>
+        <div className="export-buttons">
+          <button onClick={exportResultsAsPNG} className="btn-success">
+            📸 Export Results as PNG
+          </button>
+          <button onClick={exportResultsAsCSV} className="btn-success">
+            📄 Export Results as CSV
+          </button>
+        </div>
       </div>
 
       {/* Lands per Turn */}
@@ -166,7 +173,7 @@ const ResultsPanel = ({
             ) {
               return (
                 <div key={cardName} className="sequence-group">
-                  <h4 className="sequence-card-name">{cardName}</h4>
+                  <h4 className="sequence-card-name"><CardTooltip name={cardName}>{cardName}</CardTooltip></h4>
                   <p className="sequence-no-result">
                     No sequences found for turn {selectedTurnForSequences}. This card was not playable
                     on this turn in any simulated games.
@@ -177,7 +184,7 @@ const ResultsPanel = ({
 
             return (
               <div key={cardName} className="sequence-group">
-                <h4 className="sequence-card-name">{cardName}</h4>
+                <h4 className="sequence-card-name"><CardTooltip name={cardName}>{cardName}</CardTooltip></h4>
 
                 {sequencesForTurn && sequencesForTurn.map((data, seqIdx) => (
                   <div key={seqIdx} className="sequence-card">

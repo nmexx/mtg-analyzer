@@ -11,6 +11,7 @@
  */
 
 import React from 'react';
+import CardTooltip from './CardTooltip';
 
 const SpellsPanel = ({
   parsedDeck,
@@ -59,7 +60,7 @@ const SpellsPanel = ({
         >
           <div className="card-row-label">
             <input type="checkbox" checked={selectedKeyCards.has(card.name)} readOnly />
-            <span className="spell-card-name">{card.quantity}x {card.name}</span>
+            <CardTooltip name={card.name}><span className="spell-card-name">{card.quantity}x {card.name}</span></CardTooltip>
             <span className="card-meta">CMC {card.cmc}</span>
           </div>
           <div className="mana-cost-container">

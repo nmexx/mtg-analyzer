@@ -12,6 +12,7 @@
  */
 
 import React from 'react';
+import CardTooltip from './CardTooltip';
 
 const ExplorationPanel = ({
   parsedDeck,
@@ -54,7 +55,7 @@ const ExplorationPanel = ({
                 setDisabledExploration(newSet);
               }}
             />
-            <span className="card-name">{expl.quantity}x {expl.name}</span>
+            <CardTooltip name={expl.name}><span className="card-name">{expl.quantity}x {expl.name}</span></CardTooltip>
             <span className="card-meta">{expl.landsPerTurn} Lands/Turn, CMC {expl.cmc}</span>
           </label>
         </div>

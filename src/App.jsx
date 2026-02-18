@@ -302,6 +302,59 @@ const MTGMonteCarloAnalyzer = () => {
   };
 
   // ============================================================================
+  // Export results as CSV
+  // ============================================================================
+  const exportResultsAsCSV = () => {
+    if (!chartData) return;
+
+    const { landsData, manaByColorData, lifeLossData, keyCardsData } = chartData;
+    const turns = landsData.length;
+
+    const rows = [];
+    for (let i = 0; i < turns; i++) {
+      const row = {
+        Turn:             landsData[i].turn,
+        'Total Lands':    landsData[i]['Total Lands'],
+        'Untapped Lands': landsData[i]['Untapped Lands'],
+        'Total Mana':     manaByColorData[i]['Total Mana'],
+        'W Mana':         manaByColorData[i].W,
+        'U Mana':         manaByColorData[i].U,
+        'B Mana':         manaByColorData[i].B,
+        'R Mana':         manaByColorData[i].R,
+        'G Mana':         manaByColorData[i].G,
+        'Life Loss':      lifeLossData[i]['Life Loss'],
+      };
+      // Append any key-card playability columns
+      const keyRow = keyCardsData[i];
+      Object.keys(keyRow).forEach(k => {
+        if (k !== 'turn') row[k] = keyRow[k];
+      });
+      rows.push(row);
+    }
+
+    const headers = Object.keys(rows[0]);
+    const escape  = v => {
+      const s = String(v ?? '');
+      return s.includes(',') || s.includes('"') || s.includes('\n')
+        ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    const csv = [
+      headers.map(escape).join(','),
+      ...rows.map(r => headers.map(h => escape(r[h])).join(',')),
+    ].join('\n');
+
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = `mtg-simulation-results-${Date.now()}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  // ============================================================================
   // Render
   // ============================================================================
   return (
@@ -523,6 +576,7 @@ const MTGMonteCarloAnalyzer = () => {
         selectedKeyCards={selectedKeyCards}
         selectedTurnForSequences={selectedTurnForSequences}
         exportResultsAsPNG={exportResultsAsPNG}
+        exportResultsAsCSV={exportResultsAsCSV}
         renderSequenceBody={renderSequenceBody}
       />
 

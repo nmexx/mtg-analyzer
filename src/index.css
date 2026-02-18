@@ -213,6 +213,12 @@ body {
   cursor: pointer;
 }
 
+.export-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
 /* ─── Error banner ───────────────────────────────────────────────────────── */
 .error-banner {
   background: #fee2e2;
@@ -588,4 +594,30 @@ body {
   margin: 4px 0 0;
   font-size: 0.75rem;
   color: var(--clr-danger);
+}
+
+/* ─── Card Tooltip (Scryfall image on hover) ─────────────────────────────── */
+.card-tooltip-trigger {
+  cursor: help;
+  text-decoration: underline dotted var(--clr-faint);
+  text-underline-offset: 3px;
+}
+
+.card-tooltip {
+  position: fixed;
+  z-index: 9999;
+  pointer-events: none;
+  filter: drop-shadow(0 8px 28px rgba(0, 0, 0, 0.45));
+  animation: tooltip-fadein 0.12s ease;
+}
+
+@keyframes tooltip-fadein {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.card-tooltip-img {
+  width: 215px;
+  border-radius: 11px;
+  display: block;
 }

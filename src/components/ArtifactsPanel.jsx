@@ -13,6 +13,7 @@
  */
 
 import React from 'react';
+import CardTooltip from './CardTooltip';
 
 const ArtifactsPanel = ({
   parsedDeck,
@@ -56,7 +57,7 @@ const ArtifactsPanel = ({
                 setDisabledArtifacts(newSet);
               }}
             />
-            <span className="card-name">{artifact.quantity}x {artifact.name}</span>
+            <CardTooltip name={artifact.name}><span className="card-name">{artifact.quantity}x {artifact.name}</span></CardTooltip>
             <span className="card-meta">+{artifact.manaAmount} Mana, CMC {artifact.cmc}</span>
           </label>
           <div className="mana-symbols">

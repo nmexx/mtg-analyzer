@@ -13,6 +13,7 @@
  */
 
 import React from 'react';
+import CardTooltip from './CardTooltip';
 
 const CreaturesPanel = ({
   parsedDeck,
@@ -56,7 +57,7 @@ const CreaturesPanel = ({
                 setDisabledCreatures(newSet);
               }}
             />
-            <span className="card-name">{creature.quantity}x {creature.name}</span>
+            <CardTooltip name={creature.name}><span className="card-name">{creature.quantity}x {creature.name}</span></CardTooltip>
             <span className="card-meta">+{creature.manaAmount} Mana, CMC {creature.cmc}</span>
           </label>
           <div className="mana-symbols">

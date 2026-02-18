@@ -63,11 +63,11 @@
 
 ## UX / Export
 
-13. **CSV / JSON data export**
+13. **CSV / JSON data export** --------DONE
     - Only PNG export exists.
     - A CSV of the per-turn averages would let users do their own further analysis in spreadsheet tools.
 
-14. **Card image hover preview**
+14. **Card image hover preview** --------DONE
     - Add a Scryfall image tooltip on card names using:
       `https://api.scryfall.com/cards/named?exact=CARDNAME&format=image`
     - Makes the interface significantly more informative without any major layout changes.

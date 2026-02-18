@@ -10,6 +10,7 @@
  */
 
 import React from 'react';
+import CardTooltip from './CardTooltip';
 
 const LandsPanel = ({ parsedDeck, getManaSymbol, getFetchSymbol }) => {
   if (!parsedDeck) return null;
@@ -20,7 +21,7 @@ const LandsPanel = ({ parsedDeck, getManaSymbol, getFetchSymbol }) => {
       {parsedDeck.lands.map((land, idx) => (
         <div key={idx} className="card-row">
           <div className="card-row-label">
-            <span className="land-name">{land.quantity}x {land.name}</span>
+            <CardTooltip name={land.name}><span className="land-name">{land.quantity}x {land.name}</span></CardTooltip>
             {land.isBasic && <span className="land-fetch">⭐</span>}
             {land.isFetch && (
               <span className="land-fetch">FETCH {getFetchSymbol(land.fetchType)}</span>

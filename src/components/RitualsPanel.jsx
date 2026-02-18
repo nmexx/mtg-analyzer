@@ -13,6 +13,7 @@
  */
 
 import React from 'react';
+import CardTooltip from './CardTooltip';
 
 const RitualsPanel = ({
   parsedDeck,
@@ -59,7 +60,7 @@ const RitualsPanel = ({
                 setDisabledRituals(newSet);
               }}
             />
-            <span className="card-name">{ritual.quantity}x {ritual.name}</span>
+            <CardTooltip name={ritual.name}><span className="card-name">{ritual.quantity}x {ritual.name}</span></CardTooltip>
             <span className="card-meta">
               +{ritual.manaProduced} mana produced&nbsp;&nbsp;
               {ritual.netGain > 0 ? `(+${ritual.netGain} net)` : ritual.netGain === 0 ? '(neutral)' : `(${ritual.netGain} net)`}
