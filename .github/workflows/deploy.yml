@@ -37,16 +37,17 @@ jobs:
       - name: Build (Vite)
         run: npm run build
 
-      # ── 7. Deploy via rsync over SSH (port 22) ─────────────────────────────
+      # ── 7. Deploy via SFTP using lftp ──────────────────────────────────────
       #  Secrets: FTP_HOST  FTP_USER  FTP_PASSWORD  FTP_REMOTE
       #  FTP_REMOTE = absolute path on server, e.g. /home/user/public_html/mtg
-      - name: Deploy via rsync
-        uses: Burnett01/rsync-deployments@7.0.1
-        with:
-          switches: -avzr --delete
-          path: dist/
-          remote_path: ${{ secrets.FTP_REMOTE }}
-          remote_host: ${{ secrets.FTP_HOST }}
-          remote_port: 22
-          remote_user: ${{ secrets.FTP_USER }}
-          remote_password: ${{ secrets.FTP_PASSWORD }}
+      - name: Deploy via lftp SFTP
+        run: |
+          sudo apt-get install -y lftp
+          lftp -e "
+            set sftp:auto-confirm yes;
+            set net:max-retries 3;
+            open sftp://${{ secrets.FTP_HOST }}:22;
+            user ${{ secrets.FTP_USER }} ${{ secrets.FTP_PASSWORD }};
+            mirror -R --delete --verbose dist/ ${{ secrets.FTP_REMOTE }};
+            quit
+          "
