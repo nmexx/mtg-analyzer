@@ -42,16 +42,16 @@ export const ARTIFACT_DATA = new Map([
   ['simic signet',             { manaAmount: 1, produces: ['G', 'U'],                entersTapped: false }],
 
   // ── Talismans ({T}: {C} free, or colored for 1 damage) ───────────────────
-  ['talisman of progress',     { manaAmount: 1, produces: ['C', 'W', 'U'],           entersTapped: false }],
-  ['talisman of dominance',    { manaAmount: 1, produces: ['C', 'U', 'B'],           entersTapped: false }],
-  ['talisman of indulgence',   { manaAmount: 1, produces: ['C', 'B', 'R'],           entersTapped: false }],
-  ['talisman of impulse',      { manaAmount: 1, produces: ['C', 'R', 'G'],           entersTapped: false }],
-  ['talisman of unity',        { manaAmount: 1, produces: ['C', 'G', 'W'],           entersTapped: false }],
-  ['talisman of hierarchy',    { manaAmount: 1, produces: ['C', 'W', 'B'],           entersTapped: false }],
-  ['talisman of creativity',   { manaAmount: 1, produces: ['C', 'U', 'R'],           entersTapped: false }],
-  ['talisman of resilience',   { manaAmount: 1, produces: ['C', 'B', 'G'],           entersTapped: false }],
-  ['talisman of conviction',   { manaAmount: 1, produces: ['C', 'R', 'W'],           entersTapped: false }],
-  ['talisman of curiosity',    { manaAmount: 1, produces: ['C', 'G', 'U'],           entersTapped: false }],
+  ['talisman of progress',     { manaAmount: 1, produces: ['C', 'W', 'U'],           entersTapped: false, isTalisman: true, lifeloss: 1 }],
+  ['talisman of dominance',    { manaAmount: 1, produces: ['C', 'U', 'B'],           entersTapped: false, isTalisman: true, lifeloss: 1 }],
+  ['talisman of indulgence',   { manaAmount: 1, produces: ['C', 'B', 'R'],           entersTapped: false, isTalisman: true, lifeloss: 1 }],
+  ['talisman of impulse',      { manaAmount: 1, produces: ['C', 'R', 'G'],           entersTapped: false, isTalisman: true, lifeloss: 1 }],
+  ['talisman of unity',        { manaAmount: 1, produces: ['C', 'G', 'W'],           entersTapped: false, isTalisman: true, lifeloss: 1 }],
+  ['talisman of hierarchy',    { manaAmount: 1, produces: ['C', 'W', 'B'],           entersTapped: false, isTalisman: true, lifeloss: 1 }],
+  ['talisman of creativity',   { manaAmount: 1, produces: ['C', 'U', 'R'],           entersTapped: false, isTalisman: true, lifeloss: 1 }],
+  ['talisman of resilience',   { manaAmount: 1, produces: ['C', 'B', 'G'],           entersTapped: false, isTalisman: true, lifeloss: 1 }],
+  ['talisman of conviction',   { manaAmount: 1, produces: ['C', 'R', 'W'],           entersTapped: false, isTalisman: true, lifeloss: 1 }],
+  ['talisman of curiosity',    { manaAmount: 1, produces: ['C', 'G', 'U'],           entersTapped: false, isTalisman: true, lifeloss: 1 }],
 
   // ── Diamonds (ETB Tapped, single-color) ──────────────────────────────────
   ['marble diamond',           { manaAmount: 1, produces: ['W'],                     entersTapped: true  }],

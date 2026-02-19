@@ -384,6 +384,8 @@ export const processManaArtifact = (data) => {
   const isBasaltMonolith = doesntUntapNaturally && cardName === 'basalt monolith';
   const isGrimMonolith   = doesntUntapNaturally && cardName === 'grim monolith';
   const isManaVault      = doesntUntapNaturally && cardName === 'mana vault';
+  const isTalisman       = known?.isTalisman ?? false;
+  const lifeloss         = known?.lifeloss ?? undefined;
 
   return {
     name: data.name,
@@ -402,6 +404,8 @@ export const processManaArtifact = (data) => {
     doesntUntapNaturally,
     etbCost,
     condition,
+    isTalisman,
+    ...(lifeloss !== undefined && { lifeloss }),
     cmc: calculateCMC(data.cmc, data.mana_cost),
     manaCost: data.mana_cost || '',
     oracleText: data.oracle_text,

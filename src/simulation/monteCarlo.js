@@ -394,22 +394,23 @@ export const monteCarlo = (deckToParse, config = {}) => {
         turnLog.actions.push(`Ancient Tomb damage: -${ancientTombDmg} life`);
       }
 
-      // Starting Town
-      const startingTownDmg = battlefield.filter(p => p.card.isLand && p.card.name === 'starting town')
-        .reduce((s, p) => s + (p.card.lifeloss ?? 1), 0);
-      if (startingTownDmg > 0) {
-        cumulativeLifeLoss += startingTownDmg;
-        turnLog.lifeLoss   += startingTownDmg;
-        turnLog.actions.push(`Starting Town damage: -${startingTownDmg} life`);
-      }
-
-      // Pain Lands (turns 1-5 simplified)
-      const painLandDmg = battlefield.filter(p => p.card.isLand && p.card.isPainLand)
+      // Pain Lands & Starting Town (turns 1-5 simplified)
+      const painLandDmg = battlefield
+        .filter(p => p.card.isLand && (p.card.isPainLand || p.card.name === 'starting town'))
         .reduce((s, p) => s + (p.card.lifeloss ?? 1), 0);
       if (painLandDmg > 0 && turn <= 5) {
         cumulativeLifeLoss += painLandDmg;
         turnLog.lifeLoss   += painLandDmg;
         turnLog.actions.push(`Pain Land damage: -${painLandDmg} life`);
+      }
+
+      // Talismans (turns 1-5 simplified — 1 damage per talisman tapped for colored mana)
+      const talismanDmg = battlefield.filter(p => p.card.isTalisman)
+        .reduce((s, p) => s + (p.card.lifeloss ?? 1), 0);
+      if (talismanDmg > 0 && turn <= 5) {
+        cumulativeLifeLoss += talismanDmg;
+        turnLog.lifeLoss   += talismanDmg;
+        turnLog.actions.push(`Talisman damage: -${talismanDmg} life`);
       }
 
       // 5-Color Pain Lands
