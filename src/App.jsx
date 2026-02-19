@@ -1214,6 +1214,7 @@ const MTGMonteCarloAnalyzer = () => {
       {/* Footer */}
       <div className="app-footer">
         <p>All card data © Wizards of the Coast</p>
+        <p className="app-version">v{__APP_VERSION__}</p>
       </div>
     </div>
   );

@@ -71,6 +71,13 @@ body {
   font-size: 0.875rem;
 }
 
+.app-version {
+  margin-top: 4px;
+  font-size: 0.75rem;
+  opacity: 0.6;
+  letter-spacing: 0.05em;
+}
+
 /* ─── Shared panel ───────────────────────────────────────────────────────── */
 .panel {
   background: var(--clr-bg-panel);
