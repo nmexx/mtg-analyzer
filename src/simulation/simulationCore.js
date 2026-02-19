@@ -612,3 +612,64 @@ export const castSpells = (hand, battlefield, graveyard, turnLog, keyCardNames, 
     }
   }
 };
+
+// ─────────────────────────────────────────────────────────────────────────────
+// calculateBattlefieldDamage
+//   Returns the total life loss from self-damaging permanents for a given turn,
+//   plus a breakdown array for action-log messages.
+//   `turn` is 0-based (matches the monteCarlo loop variable).
+// ─────────────────────────────────────────────────────────────────────────────
+export const calculateBattlefieldDamage = (battlefield, turn) => {
+  const breakdown = [];
+  let total = 0;
+
+  // Mana Crypt (50% coin-flip = 1.5 avg per copy)
+  const cryptCount = battlefield.filter(
+    p => p.card.isManaArtifact && p.card.name?.toLowerCase() === 'mana crypt'
+  ).length;
+  if (cryptCount > 0) {
+    const dmg = cryptCount * 1.5;
+    total += dmg;
+    breakdown.push(`Mana Crypt damage: -${dmg} life (avg)`);
+  }
+
+  // Ancient Tomb
+  const tombDmg = battlefield
+    .filter(p => p.card.isLand && p.card.isAncientTomb)
+    .reduce((s, p) => s + (p.card.lifeloss ?? 2), 0);
+  if (tombDmg > 0) {
+    total += tombDmg;
+    breakdown.push(`Ancient Tomb damage: -${tombDmg} life`);
+  }
+
+  // Pain Lands & Starting Town (turns 1-5 simplified)
+  if (turn <= 5) {
+    const painDmg = battlefield
+      .filter(p => p.card.isLand && (p.card.isPainLand || p.card.name === 'starting town'))
+      .reduce((s, p) => s + (p.card.lifeloss ?? 1), 0);
+    if (painDmg > 0) {
+      total += painDmg;
+      breakdown.push(`Pain Land damage: -${painDmg} life`);
+    }
+
+    // Talismans (1 damage per talisman tapped for colored mana)
+    const taliDmg = battlefield
+      .filter(p => p.card.isTalisman)
+      .reduce((s, p) => s + (p.card.lifeloss ?? 1), 0);
+    if (taliDmg > 0) {
+      total += taliDmg;
+      breakdown.push(`Talisman damage: -${taliDmg} life`);
+    }
+  }
+
+  // 5-Color Pain Lands (only when tapped)
+  const fiveDmg = battlefield
+    .filter(p => p.card.isLand && p.card.isFiveColorPainLand && p.tapped)
+    .reduce((s, p) => s + (p.card.lifeloss ?? 1), 0);
+  if (fiveDmg > 0) {
+    total += fiveDmg;
+    breakdown.push(`5-Color Pain Land damage: -${fiveDmg} life`);
+  }
+
+  return { total, breakdown };
+};

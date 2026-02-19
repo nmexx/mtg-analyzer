@@ -43,6 +43,7 @@ import {
   calculateManaAvailability,
   canPlayCard,
   tapManaSources,
+  calculateBattlefieldDamage,
 } from './simulationCore.js';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -376,50 +377,12 @@ export const monteCarlo = (deckToParse, config = {}) => {
       // Phase 6: Cast spells
       castSpells(hand, battlefield, graveyard, turnLog, keyCardNames, deckToParse, library, turn, simConfig);
 
-      // Mana Crypt damage (50% coin-flip = 1.5 avg)
-      const manaCryptCount = battlefield.filter(p => p.card.isManaArtifact && p.card.name?.toLowerCase() === 'mana crypt').length;
-      if (manaCryptCount > 0) {
-        const dmg = manaCryptCount * 1.5;
-        cumulativeLifeLoss += dmg;
-        turnLog.lifeLoss   += dmg;
-        turnLog.actions.push(`Mana Crypt damage: -${dmg} life (avg)`);
-      }
-
-      // Ancient Tomb
-      const ancientTombDmg = battlefield.filter(p => p.card.isLand && p.card.isAncientTomb)
-        .reduce((s, p) => s + (p.card.lifeloss ?? 2), 0);
-      if (ancientTombDmg > 0) {
-        cumulativeLifeLoss += ancientTombDmg;
-        turnLog.lifeLoss   += ancientTombDmg;
-        turnLog.actions.push(`Ancient Tomb damage: -${ancientTombDmg} life`);
-      }
-
-      // Pain Lands & Starting Town (turns 1-5 simplified)
-      const painLandDmg = battlefield
-        .filter(p => p.card.isLand && (p.card.isPainLand || p.card.name === 'starting town'))
-        .reduce((s, p) => s + (p.card.lifeloss ?? 1), 0);
-      if (painLandDmg > 0 && turn <= 5) {
-        cumulativeLifeLoss += painLandDmg;
-        turnLog.lifeLoss   += painLandDmg;
-        turnLog.actions.push(`Pain Land damage: -${painLandDmg} life`);
-      }
-
-      // Talismans (turns 1-5 simplified — 1 damage per talisman tapped for colored mana)
-      const talismanDmg = battlefield.filter(p => p.card.isTalisman)
-        .reduce((s, p) => s + (p.card.lifeloss ?? 1), 0);
-      if (talismanDmg > 0 && turn <= 5) {
-        cumulativeLifeLoss += talismanDmg;
-        turnLog.lifeLoss   += talismanDmg;
-        turnLog.actions.push(`Talisman damage: -${talismanDmg} life`);
-      }
-
-      // 5-Color Pain Lands
-      const fiveColorPainDmg = battlefield.filter(p => p.card.isLand && p.card.isFiveColorPainLand && p.tapped)
-        .reduce((s, p) => s + (p.card.lifeloss ?? 1), 0);
-      if (fiveColorPainDmg > 0) {
-        cumulativeLifeLoss += fiveColorPainDmg;
-        turnLog.lifeLoss   += fiveColorPainDmg;
-        turnLog.actions.push(`5-Color Pain Land damage: -${fiveColorPainDmg} life`);
+      // Phase 7: Calculate damage from mana sources and other permanents on the battlefield
+      const { total: battlefieldDmg, breakdown: battlefieldDmgLog } = calculateBattlefieldDamage(battlefield, turn);
+      if (battlefieldDmg > 0) {
+        cumulativeLifeLoss += battlefieldDmg;
+        turnLog.lifeLoss   += battlefieldDmg;
+        battlefieldDmgLog.forEach(msg => turnLog.actions.push(msg));
       }
 
       turnActions.push(turnLog);
