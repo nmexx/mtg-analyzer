@@ -8,7 +8,12 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "deploy": "node deploy.mjs"
+    "lint": "eslint src Card_Archive tests",
+    "lint:fix": "eslint src Card_Archive tests --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "deploy": "node deploy.mjs",
+    "prepare": "husky"
   },
   "dependencies": {
     "html2canvas": "^1.4.1",
@@ -17,15 +22,41 @@
     "recharts": "^2.5.0"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.2",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@types/react": "^18.2.43",
     "@types/react-dom": "^18.2.17",
     "@vitejs/plugin-react": "^4.2.1",
     "basic-ftp": "^5.1.0",
+    "eslint": "^4.1.1",
+    "eslint-config-prettier": "^6.15.0",
+    "eslint-plugin-react": "^7.22.0",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "globals": "^17.3.0",
+    "husky": "^9.1.7",
     "jsdom": "^28.1.0",
+    "lint-staged": "^16.2.7",
+    "prettier": "^3.8.1",
     "terser": "^5.46.0",
-    "vite": "^5.0.8",
+    "vite": "^7.3.1",
     "vitest": "^4.0.18"
+  },
+  "lint-staged": {
+    "src/**/*.{js,jsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "Card_Archive/**/*.js": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "tests/**/*.{js,jsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,yml,yaml}": [
+      "prettier --write"
+    ]
   }
 }

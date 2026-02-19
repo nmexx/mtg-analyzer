@@ -48,5 +48,8 @@ lerna-debug.log*
 
 # Backup / temp files
 *.bak
+
+# Husky internal (should not be committed)
+.husky/_
 *.tmp
 *.orig

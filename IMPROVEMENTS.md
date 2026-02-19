@@ -1,8 +1,16 @@
 # MTG Monte Carlo Analyzer — Planned Improvements
 
+> **Complexity key** (unimplemented items only)
+> `[Low]` — isolated change, ≤ ~50 lines, no new data structures
+> `[Medium]` — touches 2–4 files, new logic or UI component required
+> `[High]` — cross-cutting change, new architecture or significant new state
+> `[Very High]` — multi-session effort, requires new subsystem or major refactor
+
+---
+
 ## Performance / Architecture
 
-1. **Move simulation to a Web Worker**
+1. **Move simulation to a Web Worker** `[High]` *(superseded by #24 below)*
    - The `monteCarlo` loop runs on the main thread inside a `setTimeout`, which blocks the UI on high iterations.
    - A Web Worker would allow a real progress bar and prevent the browser from freezing.
 
@@ -10,7 +18,7 @@
    - The file is 4000+ lines and mixes simulation engine, data processing, and UI.
    - Extract: `SimulationEngine.js`, `DeckParser.js`, and separate panel components (`LandsPanel`, `ResultsPanel`, `SequencesPanel`, etc.)
 
-3. **`useMemo`/`useCallback` for expensive recalculations** 
+3. **`useMemo`/`useCallback` for expensive recalculations** `[Low]`
    - `prepareChartData()`, `buildCompleteDeck()`, and the `LAND_DATA` Sets all run on every render.
    - Memoizing them would eliminate needless recalculations on unrelated state updates.
 
@@ -26,15 +34,16 @@
    - No CMC distribution chart exists.
    - Show spells grouped by CMC (standard deckbuilding metric); trivially added with existing Recharts infrastructure.
 
-6. **"First playable by turn X" summary table**
+6. **"First playable by turn X" summary table** `[Low]`
    - For each key card, show the earliest turn where playability crosses configurable thresholds (e.g. 50%, 80%, 95%).
+   - All required data already exists in `keyCardPlayability`; this is a pure display addition.
    - Complements the full per-turn chart with a quick-read summary.
 
 7. **Standard deviation bands on charts** --------DONE
    - Only averages are currently reported.
    - Adding ± std. deviation to the lands/mana charts would show consistency vs. raw average.
 
-8. **On-Play vs. On-Draw toggle**
+8. **On-Play vs. On-Draw toggle** `[Low]`
    - Non-commander mode already skips the draw on turn 0 (on the play).
    - An explicit toggle would let users measure the concrete impact of going second.
 
@@ -50,11 +59,11 @@
     - `canPlayCard` checks total mana and single-pip counts but doesn't account for competing demands across the same mana sources (e.g. needing `{U}{U}` and `{B}` from the same Watery Grave).
     - A proper color-availability solver would improve accuracy for multicolor decks.
 
-11. **Scry / cantrip modeling** 
+11. **Scry / cantrip modeling** `[Medium]`
     - Cards like Brainstorm, Ponder, Serum Visions meaningfully improve land-hit rates.
     - Even a simplified "look at top N cards, keep best land" heuristic would improve fidelity for blue decks.
 
-12. **Threshold-aware `selectBestLand` ordering**
+12. **Threshold-aware `selectBestLand` ordering** `[Medium]`
     - Fast lands currently prioritize untapped without checking if you're about to exceed the 2-land threshold.
     - Check/reveal lands similarly don't verify whether the required type is already in hand.
     - The land selection heuristic should be made threshold- and hand-state-aware.
@@ -80,24 +89,25 @@
 
 ## New — Simulation Accuracy
 
-16. **Multi-card combo tracking**
+16. **Multi-card combo tracking** `[Medium]`
     - Key cards are currently tracked independently.
     - Add a "require all of" combo group: report the % of games where *all* selected cards in a group are simultaneously castable on the same turn.
     - High value for combo decks (e.g. Thassa's Oracle + Demonic Consultation both available by turn 3).
 
-17. **"On-curve" playability**
+17. **"On-curve" playability** `[Low]`
     - Separate from general cumulative playability, track the % of games where a key card is castable on *exactly* the turn matching its CMC.
     - The current metric shows a 3-drop at 90% on turn 7; the meaningful question is turn 3.
 
-18. **Land flood / screw rate tracking**
+18. **Land flood / screw rate tracking** `[Low]`
     - Track per-iteration whether the game hit defined thresholds: ≥ N lands by turn T (flood) or ≤ N lands by turn T (screw).
     - Report as a % alongside the averages — directly answers "am I running too many/few lands?" in a way averages cannot.
 
-19. **Opening hand land distribution histogram**
+19. **Opening hand land distribution histogram** `[Low]`
     - Bar chart of how often kept hands contain exactly 0–7 lands after mulligans.
+    - Requires storing one integer per iteration at the mulligan step; chart is a simple bar.
     - Makes mulligan strategy tuning concrete and visual.
 
-20. **Card draw / cantrip land-thinning**
+20. **Card draw / cantrip land-thinning** `[Medium]`
     - Spells with a `drawsCards: N` flag (Night's Whisper, Sign in Blood, Harmonize, etc.) should draw N cards from the library during `castSpells`.
     - Complements existing scry modeling (item 11) and improves fidelity for black/blue midrange.
 
@@ -105,16 +115,16 @@
 
 ## New — UX
 
-21. **Shareable URL**
+21. **Shareable URL** `[Medium]`
     - Encode deck text + all simulation settings into the URL hash using `LZ-string` compression or `btoa`.
     - Anyone clicking the link gets an identical pre-filled simulation — zero backend required.
 
-22. **Named simulation presets**
+22. **Named simulation presets** `[Medium]`
     - Extend LocalStorage persistence (item 9) to allow saving and loading named configs.
     - Example presets: "cEDH 33-land", "Aggro 20-land 60-card", "Budget Midrange".
     - Restores both card selections and all simulation settings at once.
 
-23. **Deck health warnings panel**
+23. **Deck health warnings panel** `[Medium]`
     - Post-simulation, surface plain-language alerts based on thresholds, e.g.:
       - *"Average green mana by turn 2 is 0.2 — [Noble Hierarch] is only 18% castable on curve."*
       - *"Cumulative life loss exceeds 10 by turn 4 in 60% of games."*
@@ -125,12 +135,46 @@
 
 ## New — Performance / Architecture
 
-24. **Web Worker with real progress bar** *(highest-ROI unfinished item from #1)*
+24. **Web Worker with real progress bar** `[High]` *(highest-ROI unfinished item from #1)*
     - At 10k iterations the UI hitches noticeably; blocking becomes severe at 50k+.
     - Offload the `monteCarlo` loop to a Worker, post progress messages back, and render a live % bar.
     - The engine is already pure and config-driven — it can be transferred with a single `import`.
 
-25. **Batch / ranked deck comparison (N variants)**
+25. **Batch / ranked deck comparison (N variants)** `[Very High]`
     - Extend the current A/B mode to support N named deck slots.
     - Run all variants and display a sortable summary table ranked by a chosen metric (e.g. key-card T3 playability, average mana T4, life loss T5).
     - Useful for iterating 20 vs 22 vs 24 land counts, or comparing different ramp packages.
+
+---
+
+## New — Simulation Accuracy (Code-Audit Findings)
+
+26. **Hand size limit not enforced** `[Low]`
+    - The simulation never discards down to 7 cards at end of turn.
+    - Ramp spells that put lands into hand (`landsToHand`) and normal draws can push hand size above 7 indefinitely, inflating key-card playability probabilities on longer-turn runs.
+    - Fix: after casting spells each turn, discard excess cards (preferring lands if flooded, spells if screwed).
+
+27. **Chrome Mox / Mox Diamond imprint/discard ignores key cards** `[Low]`
+    - `castSpells` always imprints `nonLandsInHand[0]` and discards the first available land for Mox Diamond with no awareness of which cards are tracked key cards.
+    - A real player never imprints/discards a key card when a lower-value card is available.
+    - Fix: sort imprint/discard candidates to deprioritize cards in `selectedKeyCards`.
+
+28. **Mana Vault upkeep payment never modeled** `[Medium]`
+    - Once Mana Vault is tapped, the simulator applies its damage every upkeep indefinitely.
+    - A real player pays {4} to untap it when spare mana is available (typically turns 3+), eliminating ongoing damage.
+    - Fix: in the upkeep phase, check if `manaAvailable.total >= 4` after untap and, if so, untap the Vault and skip the damage for that turn.
+
+29. **Pain land damage is unconditional** `[Low]`
+    - `calculateBattlefieldDamage` deals damage from all pain lands on every turn 1–5 regardless of whether they were actually tapped for colored mana.
+    - Real pain lands only deal damage when tapped for a colored pip; tapping for {C} or sitting untapped is free.
+    - Fix: track a `tappedForColor` flag when `tapManaSources` taps a pain land for a colored pip, and only count those in `calculateBattlefieldDamage`.
+
+30. **Shock land payment threshold is hardcoded** `[Low]`
+    - `playLand` always pays 2 life to bring a shock land in untapped if `turn <= 6`, unconditionally.
+    - A configurable strategy (e.g. "only shock turns 1–3", "never shock below 5 life") would better reflect real play and is a direct accuracy lever for life-total analysis.
+    - Fix: add a `shockStrategy` config option (`always` / `early_only` / `never`) respected by `playLand` and exposed in the UI settings panel.
+
+31. **Fetch→shock tapped-state check uses pre-fetch battlefield** `[Medium]`
+    - When a fetch land is activated in Phase 5 and retrieves a shock land, `doesLandEnterTapped` evaluates the shock using the battlefield state *before* the fetch resolved.
+    - This means the land-count and subtype checks that govern shock/check/battle land conditions are slightly wrong for the turn the fetch fires.
+    - Fix: call `doesLandEnterTapped` after splicing the fetch out of the battlefield but before pushing the fetched land, so the snapshot accurately reflects the post-fetch board state.
