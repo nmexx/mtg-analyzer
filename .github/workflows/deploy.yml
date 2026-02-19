@@ -49,6 +49,6 @@ jobs:
           password: ${{ secrets.FTP_PASSWORD }}
           server-dir: ${{ secrets.FTP_REMOTE || '/' }}
           local-dir: ./dist/
-          security: loose
+          security: strict
           # Only uploads changed files — much faster than a full re-upload
           dangerous-clean-slate: false
