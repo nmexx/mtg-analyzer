@@ -1,0 +1,17 @@
+{
+  "recommendations": [
+    // Core toolchain
+    "esbenp.prettier-vscode",
+    "dbaeumer.vscode-eslint",
+
+    // Testing
+    "vitest.explorer",
+
+    // React / JS
+    "dsznajder.es7-react-js-snippets",
+
+    // Copilot (if not already installed)
+    "github.copilot",
+    "github.copilot-chat"
+  ]
+}

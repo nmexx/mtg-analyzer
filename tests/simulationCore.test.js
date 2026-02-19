@@ -1,17 +1,18 @@
 /**
  * simulationCore.js — Unit Tests
  *
- * Covers all 10 exported functions:
- *   shuffle                  – array permutation utility
- *   matchesRampFilter        – ramp-spell land eligibility
- *   doesLandEnterTapped      – tapped-entry logic for every land type
- *   selectBestLand           – best land to play from hand
- *   findBestLandToFetch      – best land to fetch from library
- *   calculateManaAvailability – total + per-colour mana
- *   canPlayCard              – spell-castability check
- *   tapManaSources           – marks battlefield sources as tapped
- *   playLand                 – mutation: moves land from hand → battlefield
- *   castSpells               – mutation: casts mana-producers and ramp spells
+ * Covers all 11 exported functions:
+ *   shuffle                    – array permutation utility
+ *   matchesRampFilter          – ramp-spell land eligibility
+ *   doesLandEnterTapped        – tapped-entry logic for every land type
+ *   selectBestLand             – best land to play from hand
+ *   findBestLandToFetch        – best land to fetch from library
+ *   calculateManaAvailability  – total + per-colour mana
+ *   canPlayCard                – spell-castability check
+ *   tapManaSources             – marks battlefield sources as tapped
+ *   playLand                   – mutation: moves land from hand → battlefield
+ *   castSpells                 – mutation: casts mana-producers and ramp spells
+ *   calculateBattlefieldDamage – life-loss breakdown for pain sources
  *
  * Run:  npm test
  */
@@ -29,6 +30,7 @@ import {
   tapManaSources,
   playLand,
   castSpells,
+  calculateBattlefieldDamage,
 } from '../src/simulation/simulationCore.js';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -896,5 +898,95 @@ describe('castSpells', () => {
     const log = { actions: [] };
     castSpells([dork], [perm(forest)], [], log, [], null, [], 1, {});
     expect(log.actions.some(a => a.includes('Llanowar Elves'))).toBe(true);
+  });
+});
+
+// =============================================================================
+// calculateBattlefieldDamage
+// =============================================================================
+describe('calculateBattlefieldDamage', () => {
+  it('returns zero total and empty breakdown for an empty battlefield', () => {
+    const { total, breakdown } = calculateBattlefieldDamage([], 1);
+    expect(total).toBe(0);
+    expect(breakdown).toHaveLength(0);
+  });
+
+  it('counts 1.5 life loss per Mana Crypt (coin-flip average)', () => {
+    const crypt = { name: 'Mana Crypt', isManaArtifact: true, isLand: false };
+    const { total, breakdown } = calculateBattlefieldDamage([perm(crypt)], 1);
+    expect(total).toBe(1.5);
+    expect(breakdown[0]).toMatch(/Mana Crypt/);
+  });
+
+  it('counts 3 life loss for two Mana Crypts', () => {
+    const crypt = { name: 'Mana Crypt', isManaArtifact: true, isLand: false };
+    const { total } = calculateBattlefieldDamage([perm(crypt), perm(crypt)], 1);
+    expect(total).toBe(3);
+  });
+
+  it('counts 2 life loss for Ancient Tomb', () => {
+    const tomb = makeLand({ name: 'Ancient Tomb', isAncientTomb: true, lifeloss: 2 });
+    const { total, breakdown } = calculateBattlefieldDamage([perm(tomb)], 1);
+    expect(total).toBe(2);
+    expect(breakdown[0]).toMatch(/Ancient Tomb/);
+  });
+
+  it('counts pain land damage on turn ≤ 5', () => {
+    const pain = makeLand({ name: 'Adarkar Wastes', isPainLand: true, lifeloss: 1 });
+    const { total } = calculateBattlefieldDamage([perm(pain)], 4);
+    expect(total).toBe(1);
+  });
+
+  it('does NOT count pain land damage on turn > 5', () => {
+    const pain = makeLand({ name: 'Adarkar Wastes', isPainLand: true, lifeloss: 1 });
+    const { total } = calculateBattlefieldDamage([perm(pain)], 6);
+    expect(total).toBe(0);
+  });
+
+  it('counts talisman damage on turn ≤ 5', () => {
+    const tali = {
+      name: 'Talisman of Progress',
+      isManaArtifact: true,
+      isTalisman: true,
+      lifeloss: 1,
+    };
+    const { total, breakdown } = calculateBattlefieldDamage([perm(tali)], 3);
+    expect(total).toBe(1);
+    expect(breakdown[0]).toMatch(/Talisman/);
+  });
+
+  it('does NOT count talisman damage on turn > 5', () => {
+    const tali = {
+      name: 'Talisman of Progress',
+      isManaArtifact: true,
+      isTalisman: true,
+      lifeloss: 1,
+    };
+    const { total } = calculateBattlefieldDamage([perm(tali)], 6);
+    expect(total).toBe(0);
+  });
+
+  it('counts 5-color pain land damage only when tapped', () => {
+    const city = makeLand({ name: 'City of Brass', isFiveColorPainLand: true, lifeloss: 1 });
+    const { total: tappedTotal, breakdown } = calculateBattlefieldDamage(
+      [perm(city, { tapped: true })],
+      1
+    );
+    expect(tappedTotal).toBe(1);
+    expect(breakdown[0]).toMatch(/5-Color/);
+    const { total: untappedTotal } = calculateBattlefieldDamage([perm(city, { tapped: false })], 1);
+    expect(untappedTotal).toBe(0);
+  });
+
+  it('sums multiple damage sources correctly', () => {
+    const crypt = { name: 'Mana Crypt', isManaArtifact: true, isLand: false };
+    const tomb = makeLand({ name: 'Ancient Tomb', isAncientTomb: true, lifeloss: 2 });
+    const pain = makeLand({ name: 'Adarkar Wastes', isPainLand: true, lifeloss: 1 });
+    const { total, breakdown } = calculateBattlefieldDamage(
+      [perm(crypt), perm(tomb), perm(pain)],
+      3
+    );
+    expect(total).toBe(4.5); // 1.5 (Crypt) + 2 (Tomb) + 1 (Pain)
+    expect(breakdown).toHaveLength(3);
   });
 });

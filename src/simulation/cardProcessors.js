@@ -10,8 +10,8 @@ import { ARTIFACT_DATA, BURST_MANA_SOURCES } from '../../Card_Archive/Artifacts.
 import { MANA_DORK_DATA } from '../../Card_Archive/Mana_Dorks.js';
 import { EXPLORATION_EFFECTS } from '../../Card_Archive/Exploration_Effects.js';
 import { RITUAL_DATA } from '../../Card_Archive/Rituals.js';
-import { FETCH_LAND_DATA } from '../../Card_Archive/Fetch_Lands.js';
 import LAND_DATA, {
+  FETCH_LAND_DATA,
   KNOWN_FETCH_LANDS,
   LANDS_ENTER_TAPPED_ALWAYS,
   BOUNCE_LANDS,
@@ -30,6 +30,11 @@ import LAND_DATA, {
   CONDITIONAL_LIFE_LANDS,
   BATTLE_LANDS,
   PATHWAY_LANDS,
+  SCALES_WITH_SWAMPS_LANDS,
+  SCALES_WITH_BASIC_SWAMPS_LANDS,
+  SIMPLIFIED_MANA_LANDS,
+  PHYREXIAN_TOWER_LANDS,
+  TEMPLE_FALSE_GOD_LANDS,
 } from './landData.js';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -78,7 +83,7 @@ export const extractRitualManaAmount = oracleText => {
     return wordToNum[wordMatch[1].toLowerCase()] || 1;
   }
   const numMatch = oracleText.match(/add\s+(\d+)\s+mana/i);
-  if (numMatch) return parseInt(numMatch[1]) || 1;
+  if (numMatch) return parseInt(numMatch[1], 10) || 1;
   return 1;
 };
 
@@ -100,7 +105,7 @@ export const calculateCMC = (dataCmc, manaCostString) => {
       cmc = calculatedCmc;
     }
   }
-  const result = parseInt(cmc);
+  const result = parseInt(cmc, 10);
   return isNaN(result) ? 0 : result;
 };
 
@@ -233,8 +238,6 @@ export const processLand = (data, face, _isMDFC) => {
   const produces = [];
   if (FIVE_COLOR_PAIN_LANDS.has(name)) {
     produces.push('W', 'U', 'B', 'R', 'G');
-  } else if (name === 'command tower' || name === 'path of ancestry') {
-    produces.push('W', 'U', 'B', 'R', 'G');
   } else if (oracleText.includes('{T}: Add')) {
     const manaSymbols = oracleText.match(/\{[WUBRGC]\}/g);
     if (manaSymbols) {
@@ -253,33 +256,9 @@ export const processLand = (data, face, _isMDFC) => {
     });
   }
 
-  const manaAmount = name === 'ancient tomb' || name === 'city of traitors' ? 2 : 1;
+  const manaAmount = ldEntry?.sim_flags?.manaAmount ?? 1;
 
-  // Re-assign flags (reset first so logic below is clean)
-  isBounce = false;
-  isReveal = false;
-  isCheck = false;
-  isFast = false;
-  isBattleLand = false;
-  isPathway = false;
-
-  const hasInternalLogic =
-    FIVE_COLOR_PAIN_LANDS.has(name) ||
-    HIDEAWAY_LANDS.has(name) ||
-    KNOWN_FETCH_LANDS.has(name) ||
-    CONDITIONAL_LIFE_LANDS.has(name) ||
-    BOUNCE_LANDS.has(name) ||
-    BATTLE_LANDS.has(name) ||
-    PATHWAY_LANDS.has(name) ||
-    CHECK_LANDS.has(name) ||
-    FAST_LANDS.has(name) ||
-    CROWD_LANDS.has(name) ||
-    ODYSSEY_FILTER_LANDS.has(name) ||
-    PAIN_LANDS.has(name) ||
-    LAND_DATA.has(name) ||
-    name === 'starting town' ||
-    name === 'ancient tomb' ||
-    name === 'city of traitors';
+  const hasInternalLogic = LAND_DATA.has(name) || KNOWN_FETCH_LANDS.has(name);
 
   if (BOUNCE_LANDS.has(name)) {
     entersTappedAlways = true;
@@ -381,6 +360,13 @@ export const processLand = (data, face, _isMDFC) => {
     cycleName,
     isRoadLand,
     lifeloss: ldEntry?.sim_flags?.lifeloss ?? 0,
+    // ── Scaling mana flags ────────────────────────────────────────────────────
+    scalesWithSwamps: SCALES_WITH_SWAMPS_LANDS.has(name),
+    scalesWithBasicSwamps: SCALES_WITH_BASIC_SWAMPS_LANDS.has(name),
+    simplifiedMana: SIMPLIFIED_MANA_LANDS.has(name) ? 'turn-1' : null,
+    manaFloor: ldEntry?.sim_flags?.manaFloor ?? null,
+    isPhyrexianTower: PHYREXIAN_TOWER_LANDS.has(name),
+    isTempleOfFalseGod: TEMPLE_FALSE_GOD_LANDS.has(name),
     hasInternalLogic,
     cmc: 0,
     manaCost: '',
@@ -517,6 +503,13 @@ export const processRampSpell = data => {
 export const processRitual = data => {
   const cardName = data.name.toLowerCase();
   const ritualData = RITUAL_DATA.get(cardName) || { manaProduced: 1, netGain: 0, colors: [] };
+  // Cards with activationCost use an ability (e.g. exile from hand) rather than
+  // being cast, so their playability check should use the activation cost, not the CMC.
+  const effectiveCmc =
+    ritualData.activationCost !== undefined
+      ? ritualData.activationCost
+      : calculateCMC(data.cmc, data.mana_cost);
+  const effectiveManaCost = ritualData.activationCost !== undefined ? '' : data.mana_cost || '';
   return {
     name: data.name,
     type: 'ritual',
@@ -524,8 +517,8 @@ export const processRitual = data => {
     manaProduced: ritualData.manaProduced,
     netGain: ritualData.netGain,
     ritualColors: ritualData.colors,
-    cmc: calculateCMC(data.cmc, data.mana_cost),
-    manaCost: data.mana_cost || '',
+    cmc: effectiveCmc,
+    manaCost: effectiveManaCost,
     oracleText: data.oracle_text,
   };
 };

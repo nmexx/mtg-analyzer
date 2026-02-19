@@ -96,11 +96,6 @@ describe('Mana_Dorks — known card values', () => {
     const d = MANA_DORK_DATA.get('boreal druid');
     expect(d.produces).toEqual(['C']);
   });
-
-  it('Simian Spirit Guide → R', () => {
-    const d = MANA_DORK_DATA.get('simian spirit guide');
-    expect(d.produces).toEqual(['R']);
-  });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -542,6 +537,22 @@ describe('Rituals — known card values', () => {
   it('Dramatic Reversal → Blue', () => {
     const d = RITUAL_DATA.get('dramatic reversal');
     expect(d.colors).toEqual(['U']);
+  });
+
+  it('Simian Spirit Guide → 1 mana, net gain 1, Red', () => {
+    const d = RITUAL_DATA.get('simian spirit guide');
+    expect(d).toBeDefined();
+    expect(d.manaProduced).toBe(1);
+    expect(d.netGain).toBe(1);
+    expect(d.colors).toEqual(['R']);
+  });
+
+  it('Elvish Spirit Guide → 1 mana, net gain 1, Green', () => {
+    const d = RITUAL_DATA.get('elvish spirit guide');
+    expect(d).toBeDefined();
+    expect(d.manaProduced).toBe(1);
+    expect(d.netGain).toBe(1);
+    expect(d.colors).toEqual(['G']);
   });
 });
 

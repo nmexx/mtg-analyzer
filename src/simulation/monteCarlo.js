@@ -52,7 +52,7 @@ import {
 const average = arr => {
   if (!arr || arr.length === 0) return 0;
   const sum = arr.reduce((s, v) => (v != null && !isNaN(v) ? s + v : s), 0);
-  return arr.length > 0 ? sum / arr.length : 0;
+  return sum / arr.length;
 };
 
 const stdDev = arr => {
@@ -68,6 +68,15 @@ const stdDev = arr => {
 //   Assembles the flat array of card objects that will be shuffled each
 //   iteration, honouring the include/disabled toggles from the UI.
 // ─────────────────────────────────────────────────────────────────────────────
+
+/** Push copies of each card in `cards` that isn't in the `disabled` Set. */
+const pushFiltered = (deck, cards, disabled) => {
+  if (!cards) return;
+  cards.forEach(card => {
+    if (!disabled.has(card.name)) for (let i = 0; i < card.quantity; i++) deck.push({ ...card });
+  });
+};
+
 export const buildCompleteDeck = (deckToParse, config = {}) => {
   if (!deckToParse) return [];
   const {
@@ -89,36 +98,11 @@ export const buildCompleteDeck = (deckToParse, config = {}) => {
     for (let i = 0; i < card.quantity; i++) deck.push({ ...card });
   });
 
-  if (includeArtifacts) {
-    deckToParse.artifacts.forEach(card => {
-      if (!disabledArtifacts.has(card.name))
-        for (let i = 0; i < card.quantity; i++) deck.push({ ...card });
-    });
-  }
-  if (includeCreatures) {
-    deckToParse.creatures.forEach(card => {
-      if (!disabledCreatures.has(card.name))
-        for (let i = 0; i < card.quantity; i++) deck.push({ ...card });
-    });
-  }
-  if (includeExploration && deckToParse.exploration) {
-    deckToParse.exploration.forEach(card => {
-      if (!disabledExploration.has(card.name))
-        for (let i = 0; i < card.quantity; i++) deck.push({ ...card });
-    });
-  }
-  if (includeRampSpells && deckToParse.rampSpells) {
-    deckToParse.rampSpells.forEach(card => {
-      if (!disabledRampSpells.has(card.name))
-        for (let i = 0; i < card.quantity; i++) deck.push({ ...card });
-    });
-  }
-  if (includeRituals && deckToParse.rituals) {
-    deckToParse.rituals.forEach(card => {
-      if (!disabledRituals.has(card.name))
-        for (let i = 0; i < card.quantity; i++) deck.push({ ...card });
-    });
-  }
+  if (includeArtifacts) pushFiltered(deck, deckToParse.artifacts, disabledArtifacts);
+  if (includeCreatures) pushFiltered(deck, deckToParse.creatures, disabledCreatures);
+  if (includeExploration) pushFiltered(deck, deckToParse.exploration, disabledExploration);
+  if (includeRampSpells) pushFiltered(deck, deckToParse.rampSpells, disabledRampSpells);
+  if (includeRituals) pushFiltered(deck, deckToParse.rituals, disabledRituals);
 
   deckToParse.spells.forEach(card => {
     for (let i = 0; i < card.quantity; i++) deck.push({ ...card });
@@ -188,6 +172,19 @@ export const monteCarlo = (deckToParse, config = {}) => {
     ) ||
     (deckToParse.rituals && deckToParse.rituals.length > 0);
 
+  // Pre-build a lookup so the inner loop doesn't search all deck arrays on
+  // every turn of every iteration for every key card.
+  const allPlayableCards = [
+    ...deckToParse.spells,
+    ...deckToParse.creatures,
+    ...(deckToParse.artifacts || []),
+    ...(deckToParse.rampSpells || []),
+    ...(deckToParse.exploration || []),
+  ];
+  const keyCardMap = new Map(
+    keyCardNames.map(name => [name, allPlayableCards.find(c => c.name === name)])
+  );
+
   // ── Main iteration loop ───────────────────────────────────────────────────
   for (let iter = 0; iter < iterations; iter++) {
     const shuffled = shuffle(deck);
@@ -239,8 +236,8 @@ export const monteCarlo = (deckToParse, config = {}) => {
           if (mulliganRule === 'london') {
             const newShuffle = shuffle(deck);
             const newHand = newShuffle.slice(0, 7);
+            const lc = newHand.filter(c => c.isLand).length;
             const sortedHand = [...newHand].sort((a, b) => {
-              const lc = newHand.filter(c => c.isLand).length;
               if (lc > 4) {
                 if (a.isLand && !b.isLand) return -1;
                 if (!a.isLand && b.isLand) return 1;
@@ -337,14 +334,8 @@ export const monteCarlo = (deckToParse, config = {}) => {
               summoningSick: expl.isManaCreature || false,
             });
             tapManaSources(expl, battlefield);
-            if (turnLog) {
-              const type = expl.isCreature
-                ? 'creature'
-                : expl.isArtifact
-                  ? 'artifact'
-                  : 'permanent';
-              turnLog.actions.push(`Cast ${type}: ${expl.name} (Exploration effect)`);
-            }
+            const type = expl.isCreature ? 'creature' : expl.isArtifact ? 'artifact' : 'permanent';
+            turnLog.actions.push(`Cast ${type}: ${expl.name} (Exploration effect)`);
             const nm = calculateManaAvailability(battlefield);
             Object.assign(manaAvailable, nm);
           }
@@ -446,16 +437,13 @@ export const monteCarlo = (deckToParse, config = {}) => {
             cumulativeLifeLoss += 1;
             turnLog.lifeLoss += 1;
           }
-          if (turnLog) {
-            const finalState = battlefield[battlefield.length - 1]?.tapped ? 'tapped' : 'untapped';
-            const lifeCost = fetchPermanent.card.fetchType === 'classic' ? ' [-1 life]' : '';
-            turnLog.actions.push(`Fetched ${fetchedLand.name} (${finalState})${lifeCost}`);
-          }
+          const finalState = battlefield[battlefield.length - 1]?.tapped ? 'tapped' : 'untapped';
+          const lifeCost = fetchPermanent.card.fetchType === 'classic' ? ' [-1 life]' : '';
+          turnLog.actions.push(`Fetched ${fetchedLand.name} (${finalState})${lifeCost}`);
         } else {
-          if (turnLog)
-            turnLog.actions.push(
-              `${fetchPermanent.card.name} activated but no valid fetch targets in library`
-            );
+          turnLog.actions.push(
+            `${fetchPermanent.card.name} activated but no valid fetch targets in library`
+          );
         }
       }
 
@@ -545,12 +533,7 @@ export const monteCarlo = (deckToParse, config = {}) => {
 
       // Key-card playability
       keyCardNames.forEach(cardName => {
-        const keyCard =
-          deckToParse.spells.find(c => c.name === cardName) ||
-          deckToParse.creatures.find(c => c.name === cardName) ||
-          deckToParse.artifacts.find(c => c.name === cardName) ||
-          (deckToParse.rampSpells && deckToParse.rampSpells.find(c => c.name === cardName)) ||
-          (deckToParse.exploration && deckToParse.exploration.find(c => c.name === cardName));
+        const keyCard = keyCardMap.get(cardName);
 
         if (keyCard && canPlayCard(keyCard, manaAvailable)) {
           results.keyCardPlayability[cardName][turn]++;

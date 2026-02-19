@@ -11,7 +11,7 @@ npm run test:watch
 ```
 
 **Framework:** [Vitest](https://vitest.dev/)  
-**Test files:** 8 files · **393 tests** total (as of Feb 2026)
+**Test files:** 8 files · **423 tests** total (as of Feb 2026)
 
 ---
 
@@ -62,9 +62,9 @@ Covers all 13 exported pure functions that transform raw Scryfall data into inte
 
 ---
 
-### `simulationCore.js` — `src/simulation/simulationCore.js` (66 tests)
+### `simulationCore.js` — `src/simulation/simulationCore.js` (93 tests)
 
-Covers all 10 exported pure simulation primitives.
+Covers all 11 exported pure simulation primitives.
 
 | Function | Tests | Key scenarios |
 |---|---|---|
@@ -79,6 +79,7 @@ Covers all 10 exported pure simulation primitives.
 | `tapManaSources` | 5 | Coloured source, generic-cost, already-tapped ignored, exact count, zero-cost no-op |
 | `playLand` | 6 | Hand→battlefield, untapped/tapped entry, `turnLog` written, bounce returns a land, fetch placed, life-loss = 0 for basics |
 | `castSpells` | 7 | Mana creature cast, insufficient mana skip, artifact cast, Cultivate (lands-to-hand), `includeRampSpells=false`, disabled list, `turnLog` |
+| `calculateBattlefieldDamage` | 10 | Empty battlefield → 0; Mana Crypt 1.5 per copy; Ancient Tomb 2 life; pain land counted turns 1–5 only; talisman counted turns 1–5 only; 5-color pain land counted when tapped only; multiple sources sum correctly |
 
 ---
 
@@ -162,7 +163,7 @@ Runs in the **jsdom** environment (`// @vitest-environment jsdom`). Covers all 7
 
 ---
 
-### `App.test.jsx` — `src/App.jsx` (44 tests)
+### `App.test.jsx` — `src/App.jsx` (46 tests)
 
 Runs in the **jsdom** environment with `@testing-library/react`. Tests the top-level
 `MTGMonteCarloAnalyzer` component end-to-end, mocking the heavy-compute modules
@@ -177,6 +178,7 @@ Runs in the **jsdom** environment with `@testing-library/react`. Tests the top-l
 | `Run Simulation flow` | After parsing a deck, "Start Simulation" button appears; clicking it invokes `monteCarlo` exactly once |
 | `localStorage persistence` | Deck text persisted to `localStorage.slotA.deckText` on change (new nested schema); saved deck text, `apiMode`, and `comparisonMode` all restored on re-mount; `labelA` persisted when changed in comparison mode; defaults used when `localStorage` is empty |
 | `Comparison mode` | "Single Deck" and "Compare Two Decks" toggle buttons render; single-deck is default (active class present); clicking Compare renders two `deck-textarea` elements; Deck A/B label inputs default to "Deck A" / "Deck B"; clicking Single Deck reverts to single-deck UI; both Parse Deck buttons independently call `parseDeckList`; "Parsing failed (Deck B)" shown on Deck B null parse; guard error "Please parse Deck B first" fires when only Deck A is parsed before simulation; `monteCarlo` called twice when both decks are parsed and simulation runs |
+| `localStorage persistence` (extended) | `turns` saved to `localStorage` when changed via SimulationSettingsPanel; `commanderMode` saved when Commander Mode checkbox is toggled |
 
 > **Setup note:** `vite.config.js` now includes a `test` block (`globals: true`, `environment: 'jsdom'`,
 > `setupFiles: ['./tests/setup.js']`). The setup file extends vitest's `expect` with
@@ -188,15 +190,15 @@ Runs in the **jsdom** environment with `@testing-library/react`. Tests the top-l
 
 | File | Tests |
 |---|---|
-| `cards.test.js` | 76 |
+| `cards.test.js` | 77 |
 | `cardProcessors.test.js` | 58 |
-| `simulationCore.test.js` | 66 |
+| `simulationCore.test.js` | 93 |
 | `monteCarlo.test.js` | 56 |
 | `deckParser.test.js` | 30 |
 | `math.test.js` | 22 |
 | `uiHelpers.test.js` | 41 |
-| `App.test.jsx` | 44 |
-| **Total** | **393** |
+| `App.test.jsx` | 46 |
+| **Total** | **423** |
 
 ## What is not yet tested
 

@@ -414,6 +414,55 @@ describe('localStorage persistence', () => {
     render(<MTGMonteCarloAnalyzer />);
     expect(screen.getByRole('button', { name: /compare two decks/i }).className).toMatch(/active/i);
   });
+
+  it('persists turns to localStorage when changed in SimulationSettingsPanel', async () => {
+    parseDeckList.mockResolvedValue(MOCK_PARSED_DECK);
+    render(<MTGMonteCarloAnalyzer />);
+
+    // Parse so that SimulationSettingsPanel becomes visible
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /parse deck/i }));
+    });
+
+    // The turns input is type="number" min="1" max="15"
+    await waitFor(() => {
+      expect(document.querySelector('input[type="number"][min="1"][max="15"]')).not.toBeNull();
+    });
+
+    const turnsInput = document.querySelector('input[type="number"][min="1"][max="15"]');
+    await act(async () => {
+      fireEvent.change(turnsInput, { target: { value: '10' } });
+    });
+
+    await waitFor(() => {
+      const saved = JSON.parse(localStorage.getItem('mtg_mca_state') || '{}');
+      expect(saved.turns).toBe(10);
+    });
+  });
+
+  it('persists commanderMode to localStorage when toggled on', async () => {
+    parseDeckList.mockResolvedValue(MOCK_PARSED_DECK);
+    render(<MTGMonteCarloAnalyzer />);
+
+    // Parse so that SimulationSettingsPanel (and the Commander Mode checkbox) appears
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /parse deck/i }));
+    });
+
+    // Commander Mode is a checkbox wrapped inside a <label>; role+name works for this pattern
+    await waitFor(() => {
+      expect(screen.getByRole('checkbox', { name: /Commander Mode/i })).toBeInTheDocument();
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('checkbox', { name: /Commander Mode/i }));
+    });
+
+    await waitFor(() => {
+      const saved = JSON.parse(localStorage.getItem('mtg_mca_state') || '{}');
+      expect(saved.commanderMode).toBe(true);
+    });
+  });
 });
 
 // =============================================================================

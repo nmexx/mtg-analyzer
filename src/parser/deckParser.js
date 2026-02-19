@@ -21,9 +21,15 @@ import { processCardData, processSpell } from '../simulation/cardProcessors.js';
 
 const EMPTY_RESULT = (errors = []) => ({
   errors,
-  lands: [], artifacts: [], creatures: [], exploration: [],
-  rituals: [], rampSpells: [], spells: [],
-  totalCards: 0, landCount: 0,
+  lands: [],
+  artifacts: [],
+  creatures: [],
+  exploration: [],
+  rituals: [],
+  rampSpells: [],
+  spells: [],
+  totalCards: 0,
+  landCount: 0,
 });
 
 /**
@@ -43,21 +49,27 @@ export const parseDeckList = async (deckText, parserCtx = {}) => {
   if (cardLookupMap.size === 0 && apiMode === 'local') {
     return EMPTY_RESULT(['Please upload cards.json file first']);
   }
+  if (typeof lookupCard !== 'function') {
+    return EMPTY_RESULT(['No card lookup function provided']);
+  }
 
   // ── Parse quantity + name pairs ──────────────────────────────────────────
-  const lines     = deckText.split('\n');
+  const lines = deckText.split('\n');
   const cardCounts = new Map();
 
   for (const line of lines) {
     const trimmed = line.trim();
-    if (!trimmed ||
-        trimmed.toLowerCase() === 'deck' ||
-        trimmed.toLowerCase() === 'sideboard' ||
-        trimmed.toLowerCase() === 'commander') continue;
+    if (
+      !trimmed ||
+      trimmed.toLowerCase() === 'deck' ||
+      trimmed.toLowerCase() === 'sideboard' ||
+      trimmed.toLowerCase() === 'commander'
+    )
+      continue;
 
     const match = trimmed.match(/^(\d+)x?\s+(.+)$/);
     if (match) {
-      const quantity = parseInt(match[1]);
+      const quantity = parseInt(match[1], 10);
       const cardName = match[2].trim();
       cardCounts.set(cardName, (cardCounts.get(cardName) || 0) + quantity);
     }
@@ -66,13 +78,13 @@ export const parseDeckList = async (deckText, parserCtx = {}) => {
   if (cardCounts.size === 0) return null;
 
   // ── Look up and categorise each card ─────────────────────────────────────
-  const lands      = [];
-  const artifacts  = [];
-  const creatures  = [];
-  const rituals    = [];
+  const lands = [];
+  const artifacts = [];
+  const creatures = [];
+  const rituals = [];
   const rampSpells = [];
   const exploration = [];
-  const spells     = [];
+  const spells = [];
 
   for (const [cardName, quantity] of cardCounts.entries()) {
     const cardData = await lookupCard(cardName);
@@ -88,18 +100,18 @@ export const parseDeckList = async (deckText, parserCtx = {}) => {
 
     // MDFCs with a land face also get a spell-side entry for key-card selection
     if (cardData.layout === 'modal_dfc' && cardData.card_faces?.length > 0) {
-      const frontFace   = cardData.card_faces[0];
-      const backFace    = cardData.card_faces[1];
+      const frontFace = cardData.card_faces[0];
+      const backFace = cardData.card_faces[1];
       const frontIsLand = frontFace.type_line?.toLowerCase().includes('land');
-      const backIsLand  = backFace.type_line?.toLowerCase().includes('land');
+      const backIsLand = backFace.type_line?.toLowerCase().includes('land');
 
       if (frontIsLand || backIsLand) {
         lands.push(processed);
 
         // Add the non-land face as a spell option
-        const spellVersion       = processSpell(cardData);
-        spellVersion.quantity    = quantity;
-        spellVersion.name        = cardData.name;
+        const spellVersion = processSpell(cardData);
+        spellVersion.quantity = quantity;
+        spellVersion.name = cardData.name;
         spellVersion.isMDFCSpellSide = true;
         spells.push(spellVersion);
         continue;
@@ -107,20 +119,26 @@ export const parseDeckList = async (deckText, parserCtx = {}) => {
     }
 
     // Normal categorisation
-    if (processed.isLand)           lands.push(processed);
+    if (processed.isLand) lands.push(processed);
     else if (processed.isManaArtifact) artifacts.push(processed);
     else if (processed.isManaCreature) creatures.push(processed);
-    else if (processed.isExploration)  exploration.push(processed);
-    else if (processed.isRitual)       rituals.push(processed);
-    else if (processed.isRampSpell)    rampSpells.push(processed);
-    else                               spells.push(processed);
+    else if (processed.isExploration) exploration.push(processed);
+    else if (processed.isRitual) rituals.push(processed);
+    else if (processed.isRampSpell) rampSpells.push(processed);
+    else spells.push(processed);
   }
 
-  const allCards   = [...lands, ...artifacts, ...creatures, ...exploration, ...rituals, ...rampSpells, ...spells];
-  const totalCards = allCards.reduce((sum, c) => sum + c.quantity, 0);
+  const groups = [lands, artifacts, creatures, exploration, rituals, rampSpells, spells];
+  const totalCards = groups.reduce((sum, g) => sum + g.reduce((s, c) => s + c.quantity, 0), 0);
 
   return {
-    lands, artifacts, creatures, exploration, rituals, rampSpells, spells,
+    lands,
+    artifacts,
+    creatures,
+    exploration,
+    rituals,
+    rampSpells,
+    spells,
     totalCards,
     landCount: lands.reduce((sum, c) => sum + c.quantity, 0),
     errors,

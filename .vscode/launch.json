@@ -1,0 +1,53 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    // ── Open app in Chrome after `npm run dev` is already running ───────────
+    {
+      "name": "Launch Chrome (Vite dev server)",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:5173",
+      "webRoot": "${workspaceFolder}/src",
+      "sourceMapPathOverrides": {
+        "/@fs/*": "${workspaceFolder}/*"
+      }
+    },
+
+    // ── Debug Vitest tests ───────────────────────────────────────────────────
+    {
+      "name": "Debug Vitest Tests",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "--inspect-brk",
+        "${workspaceFolder}/node_modules/vitest/vitest.mjs",
+        "run",
+        "--reporter=verbose"
+      ],
+      "console": "integratedTerminal",
+      "smartStep": true,
+      "sourceMaps": true,
+      "cwd": "${workspaceFolder}"
+    },
+
+    // ── Debug a single test file ─────────────────────────────────────────────
+    {
+      "name": "Debug Current Test File",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "--inspect-brk",
+        "${workspaceFolder}/node_modules/vitest/vitest.mjs",
+        "run",
+        "--reporter=verbose",
+        "${relativeFile}"
+      ],
+      "console": "integratedTerminal",
+      "smartStep": true,
+      "sourceMaps": true,
+      "cwd": "${workspaceFolder}"
+    }
+  ]
+}

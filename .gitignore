@@ -25,7 +25,7 @@ yarn.lock
 .env.deploy
 
 # Editor
-.vscode/
+# .vscode/ is intentionally tracked so team settings, extensions, and debug configs are shared
 .idea/
 *.suo
 *.ntvs*

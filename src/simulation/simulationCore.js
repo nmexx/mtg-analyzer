@@ -20,6 +20,16 @@ import {
 } from '../../Card_Archive/Artifacts.js';
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Module-level lookup tables (defined once, reused everywhere)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Maps a basic-land subtype to its color symbol (used by fetch logic). */
+const SUBTYPE_TO_COLOR = { Plains: 'W', Island: 'U', Swamp: 'B', Mountain: 'R', Forest: 'G' };
+
+/** Maps a color symbol to its basic-land subtype name (used by check-land logic). */
+const COLOR_TO_SUBTYPE = { W: 'Plains', U: 'Island', B: 'Swamp', R: 'Mountain', G: 'Forest' };
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Utilities
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -68,27 +78,9 @@ export const doesLandEnterTapped = (land, battlefield, turn, commanderMode) => {
   if (land.isCheck) {
     const needsTypes = land.checkTypes?.length ? [...land.checkTypes] : [];
     if (needsTypes.length === 0) {
-      if (land.produces.includes('W') && land.produces.includes('U')) {
-        needsTypes.push('Plains', 'Island');
-      } else if (land.produces.includes('U') && land.produces.includes('B')) {
-        needsTypes.push('Island', 'Swamp');
-      } else if (land.produces.includes('B') && land.produces.includes('R')) {
-        needsTypes.push('Swamp', 'Mountain');
-      } else if (land.produces.includes('R') && land.produces.includes('G')) {
-        needsTypes.push('Mountain', 'Forest');
-      } else if (land.produces.includes('G') && land.produces.includes('W')) {
-        needsTypes.push('Forest', 'Plains');
-      } else if (land.produces.includes('W') && land.produces.includes('B')) {
-        needsTypes.push('Plains', 'Swamp');
-      } else if (land.produces.includes('U') && land.produces.includes('R')) {
-        needsTypes.push('Island', 'Mountain');
-      } else if (land.produces.includes('B') && land.produces.includes('G')) {
-        needsTypes.push('Swamp', 'Forest');
-      } else if (land.produces.includes('R') && land.produces.includes('W')) {
-        needsTypes.push('Mountain', 'Plains');
-      } else if (land.produces.includes('G') && land.produces.includes('U')) {
-        needsTypes.push('Forest', 'Island');
-      }
+      land.produces.forEach(c => {
+        if (COLOR_TO_SUBTYPE[c]) needsTypes.push(COLOR_TO_SUBTYPE[c]);
+      });
     }
     if (needsTypes.length === 0) return false;
     return !battlefield.some(
@@ -126,7 +118,7 @@ export const selectBestLand = (hand, battlefield, _library, _turn) => {
   if (playableLands.length === 0) return null;
 
   const fetches = playableLands.filter(l => l.isFetch && l.fetchType !== 'mana_cost');
-  const untappedSources = battlefield.filter(d => d.isLand && !d.tapped);
+  const untappedSources = battlefield.filter(d => d.card.isLand && !d.tapped);
   if (fetches.length > 0 && untappedSources.length >= fetches[0].fetchcost) return fetches[0];
 
   const untappedNonBounce = playableLands.filter(
@@ -159,10 +151,7 @@ export const findBestLandToFetch = (
     if (onlyBasics && !card.isBasic) return false;
     const landTypes = card.landSubtypes || [];
     const fetchColors = fetchLand.fetchColors || [];
-    return landTypes.some(type => {
-      const typeToColor = { Plains: 'W', Island: 'U', Swamp: 'B', Mountain: 'R', Forest: 'G' };
-      return fetchColors.includes(typeToColor[type]);
-    });
+    return landTypes.some(type => fetchColors.includes(SUBTYPE_TO_COLOR[type]));
   });
 
   if (eligibleLands.length === 0) return null;
@@ -377,17 +366,61 @@ export const calculateManaAvailability = (battlefield, turn = 999) => {
   const sources = [];
   const moxSimpleTurn = 2;
 
+  const addManaSource = (produces, amt) => {
+    total += amt;
+    produces.forEach(color => {
+      colors[color] = (colors[color] || 0) + amt;
+    });
+    for (let i = 0; i < amt; i++) sources.push({ produces: [...produces] });
+  };
+
   battlefield
     .filter(p => !p.tapped)
     .forEach(permanent => {
       const card = permanent.card;
       if (card.isLand) {
-        const amt = card.manaAmount || 1;
-        total += amt;
-        card.produces.forEach(color => {
-          colors[color] = (colors[color] || 0) + amt;
-        });
-        for (let i = 0; i < amt; i++) sources.push({ produces: [...card.produces] });
+        let amt;
+        if (card.scalesWithSwamps) {
+          // Cabal Coffers: {2},{T} → {B} for each Swamp you control. Net = swampCount - 2.
+          const swampCount = battlefield.filter(
+            p => p.card.isLand && p.card.landSubtypes?.includes('Swamp')
+          ).length;
+          amt = Math.max(0, swampCount - 2);
+        } else if (card.scalesWithBasicSwamps) {
+          // Cabal Stronghold: {2},{T} → {B} for each basic Swamp. Net = basicSwampCount - 2.
+          const basicSwampCount = battlefield.filter(
+            p => p.card.isLand && p.card.isBasic && p.card.landSubtypes?.includes('Swamp')
+          ).length;
+          amt = Math.max(0, basicSwampCount - 2);
+        } else if (card.isPhyrexianTower) {
+          // Phyrexian Tower: {T}={C} normally, or {T}+sac creature={B}{B}.
+          // If a creature is on the battlefield, produce 2 {B}; otherwise 1 {C}.
+          const hasCreature = battlefield.some(
+            p =>
+              (p.card.isManaCreature || p.card.type?.toLowerCase().includes('creature')) &&
+              !p.summoningSick
+          );
+          if (hasCreature) {
+            addManaSource(['B'], 2); // sac a creature for {B}{B}
+          } else {
+            addManaSource(['C'], 1); // {T} for {C}
+          }
+          return; // handled inline above
+        } else if (card.isTempleOfFalseGod) {
+          // Temple of the False God: only produces {C}{C} with 5+ lands.
+          const landCount = battlefield.filter(p => p.card.isLand).length;
+          if (landCount >= 5) {
+            amt = 2;
+          } else {
+            return; // no mana produced
+          }
+        } else if (card.simplifiedMana === 'turn-1') {
+          // Simplified scaling lands (Gaea's Cradle, Nykthos, etc.): mana = max(floor, turn-1).
+          amt = Math.max(card.manaFloor ?? 1, turn - 1);
+        } else {
+          amt = card.manaAmount || 1;
+        }
+        if (amt > 0) addManaSource(card.produces, amt);
       } else if (card.isManaArtifact) {
         if (card.isMoxOpal && !(SIMPLIFY_MOX_CONDITIONS && turn >= moxSimpleTurn)) {
           const artCount = battlefield.filter(
@@ -401,19 +434,9 @@ export const calculateManaAvailability = (battlefield, turn = 999) => {
           );
           if (legendaries.length === 0) return;
         }
-        const amt = card.manaAmount || 1;
-        total += amt;
-        card.produces.forEach(color => {
-          colors[color] = (colors[color] || 0) + amt;
-        });
-        for (let i = 0; i < amt; i++) sources.push({ produces: [...card.produces] });
+        addManaSource(card.produces, card.manaAmount || 1);
       } else if (card.isManaCreature && !permanent.summoningSick) {
-        const amt = card.manaAmount || 1;
-        total += amt;
-        card.produces.forEach(color => {
-          colors[color] = (colors[color] || 0) + amt;
-        });
-        for (let i = 0; i < amt; i++) sources.push({ produces: [...card.produces] });
+        addManaSource(card.produces, card.manaAmount || 1);
       }
     });
 
