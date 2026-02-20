@@ -43,7 +43,7 @@ jobs:
       - name: Deploy via lftp SFTP
         run: |
           sudo apt-get install -y lftp
-          lftp -e "
+          lftp -c "
             set sftp:auto-confirm yes;
             set net:max-retries 3;
             open sftp://${{ secrets.FTP_HOST }}:22;
