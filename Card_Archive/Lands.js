@@ -62,7 +62,7 @@ const LANDS_DATA = {
       sim_flags: { isFilterLand: true, entersTappedAlways: false },
       mana_abilities: [
         { mode: 1, cost: '{T}', produces: '{C}' },
-        { mode: 2, cost: '{1}, {T}', produces: 'Choice of {A}{A}, {A}{B}, or {B}{B}' },
+        { mode: 2, cost: '{A} or {B}, {T}', produces: 'Choice of {A}{A}, {A}{B}, or {B}{B}' },
       ],
       lands: [
         { name: 'Mystic Gate', color_identity: ['W', 'U'] },
@@ -151,6 +151,9 @@ const LANDS_DATA = {
         { name: 'Smoldering Marsh', color_identity: ['B', 'R'], types: ['Swamp', 'Mountain'] },
         { name: 'Cinder Glade', color_identity: ['R', 'G'], types: ['Mountain', 'Forest'] },
         { name: 'Canopy Vista', color_identity: ['G', 'W'], types: ['Forest', 'Plains'] },
+        { name: 'Radiant Summit', color_identity: ['R', 'W'], types: ['Mountain', 'Plains'] },
+        { name: 'Vernal Fen', color_identity: ['B', 'G'], types: ['Swamp', 'Forest'] },
+        { name: 'Sodden Verdure', color_identity: ['G', 'U'], types: ['Forest', 'Island'] },
       ],
     },
     {
@@ -177,7 +180,7 @@ const LANDS_DATA = {
       ],
     },
     {
-      name: 'Reveal Lands (Show Lands)',
+      name: 'Reveal Lands (Show Lands / Snarls)',
       behavior: {
         etb_tapped: true,
         untap_condition: 'reveal_land_type_from_hand',
@@ -191,6 +194,11 @@ const LANDS_DATA = {
         { name: 'Foreboding Ruins', color_identity: ['B', 'R'], reveals: ['Swamp', 'Mountain'] },
         { name: 'Game Trail', color_identity: ['R', 'G'], reveals: ['Mountain', 'Forest'] },
         { name: 'Fortified Village', color_identity: ['G', 'W'], reveals: ['Forest', 'Plains'] },
+        { name: 'Shineshadow Snarl', color_identity: ['W', 'B'], reveals: ['Plains', 'Swamp'] },
+        { name: 'Frostboil Snarl', color_identity: ['U', 'R'], reveals: ['Island', 'Mountain'] },
+        { name: 'Necroblossom Snarl', color_identity: ['B', 'G'], reveals: ['Swamp', 'Forest'] },
+        { name: 'Furycalm Snarl', color_identity: ['R', 'W'], reveals: ['Mountain', 'Plains'] },
+        { name: 'Vineglimmer Snarl', color_identity: ['G', 'U'], reveals: ['Forest', 'Island'] },
       ],
     },
     {
@@ -278,7 +286,7 @@ const LANDS_DATA = {
     {
       name: 'Slow Lands',
       behavior: { etb_tapped: true, untap_condition: 'control_lands_ge_2', has_basic_types: false },
-      sim_flags: { entersTappedAlways: true },
+      sim_flags: { isSlowLand: true },
       mana_abilities: [{ cost: '{T}', produces: 'Choice of [Color A] or [Color B]' }],
       lands: [
         { name: 'Deserted Beach', color_identity: ['W', 'U'] },
@@ -363,20 +371,6 @@ const LANDS_DATA = {
         { name: 'Golgari Guildgate', color_identity: ['B', 'G'] },
         { name: 'Boros Guildgate', color_identity: ['R', 'W'] },
         { name: 'Simic Guildgate', color_identity: ['G', 'U'] },
-        {
-          name: 'Gateway Plaza',
-          color_identity: ['C'],
-          behavior: { cost: '{1} or sacrifice' },
-          mana_abilities: [{ cost: '{T}', produces: 'Any Color' }],
-        },
-        {
-          name: 'Heap Gate',
-          color_identity: ['C'],
-          mana_abilities: [
-            { cost: '{T}', produces: '{C}' },
-            { cost: '{1}, {T}', produces: 'Create Treasure' },
-          ],
-        },
       ],
     },
     {
@@ -437,52 +431,16 @@ const LANDS_DATA = {
       sim_flags: { isPathway: true, entersTappedAlways: false },
       mana_abilities: [{ cost: '{T}', produces: 'Color of chosen face' }],
       lands: [
-        { name: 'Hengegate Pathway', back_face: 'Mistgate Pathway', color_identity: ['W', 'U'] },
-        { name: 'Mistgate Pathway', back_face: 'Hengegate Pathway', color_identity: ['W', 'U'] },
-        { name: 'Clearwater Pathway', back_face: 'Murkwater Pathway', color_identity: ['U', 'B'] },
-        { name: 'Murkwater Pathway', back_face: 'Clearwater Pathway', color_identity: ['U', 'B'] },
-        { name: 'Blightstep Pathway', back_face: 'Searstep Pathway', color_identity: ['B', 'R'] },
-        { name: 'Searstep Pathway', back_face: 'Blightstep Pathway', color_identity: ['B', 'R'] },
-        { name: 'Cragcrown Pathway', back_face: 'Timbercrown Pathway', color_identity: ['R', 'G'] },
-        { name: 'Timbercrown Pathway', back_face: 'Cragcrown Pathway', color_identity: ['R', 'G'] },
-        {
-          name: 'Branchloft Pathway',
-          back_face: 'Boulderloft Pathway',
-          color_identity: ['G', 'W'],
-        },
-        {
-          name: 'Boulderloft Pathway',
-          back_face: 'Branchloft Pathway',
-          color_identity: ['G', 'W'],
-        },
-        { name: 'Brightclimb Pathway', back_face: 'Grimclimb Pathway', color_identity: ['W', 'B'] },
-        { name: 'Grimclimb Pathway', back_face: 'Brightclimb Pathway', color_identity: ['W', 'B'] },
-        { name: 'Riverglide Pathway', back_face: 'Lavaglide Pathway', color_identity: ['U', 'R'] },
-        { name: 'Lavaglide Pathway', back_face: 'Riverglide Pathway', color_identity: ['U', 'R'] },
-        { name: 'Darkbore Pathway', back_face: 'Slitherbore Pathway', color_identity: ['B', 'G'] },
-        { name: 'Slitherbore Pathway', back_face: 'Darkbore Pathway', color_identity: ['B', 'G'] },
-        {
-          name: 'Needleverge Pathway',
-          back_face: 'Pillarverge Pathway',
-          color_identity: ['R', 'W'],
-        },
-        {
-          name: 'Pillarverge Pathway',
-          back_face: 'Needleverge Pathway',
-          color_identity: ['R', 'W'],
-        },
-        {
-          name: 'Barkchannel Pathway',
-          back_face: 'Tidechannel Pathway',
-          color_identity: ['G', 'U'],
-        },
-        {
-          name: 'Tidechannel Pathway',
-          back_face: 'Barkchannel Pathway',
-          color_identity: ['G', 'U'],
-        },
-        { name: 'Snowfield Snarl', back_face: 'Alpine Meadow', color_identity: ['W', 'U'] },
-        { name: 'Alpine Meadow', back_face: 'Snowfield Snarl', color_identity: ['W', 'U'] },
+        { name: 'Hengegate Pathway', color_identity: ['W', 'U'] },
+        { name: 'Clearwater Pathway', color_identity: ['U', 'B'] },
+        { name: 'Blightstep Pathway', color_identity: ['B', 'R'] },
+        { name: 'Cragcrown Pathway', color_identity: ['R', 'G'] },
+        { name: 'Branchloft Pathway', color_identity: ['G', 'W'] },
+        { name: 'Brightclimb Pathway', color_identity: ['W', 'B'] },
+        { name: 'Riverglide Pathway', color_identity: ['U', 'R'] },
+        { name: 'Darkbore Pathway', color_identity: ['B', 'G'] },
+        { name: 'Needleverge Pathway', color_identity: ['R', 'W'] },
+        { name: 'Barkchannel Pathway', color_identity: ['G', 'U'] },
       ],
     },
     {
@@ -592,12 +550,12 @@ const LANDS_DATA = {
     },
     {
       name: 'Verge Lands (2024-2026)',
-      sim_flags: { entersTappedAlways: false },
       behavior: {
         etb_tapped: false,
         logic: 'primary_always_secondary_requires_basic_type',
         has_basic_types: false,
       },
+      sim_flags: { entersTappedAlways: false, isVerge: true },
       mana_abilities: [
         { mode: 1, cost: '{T}', produces: '[Primary Color]' },
         {
@@ -668,23 +626,6 @@ const LANDS_DATA = {
           primary: 'G',
           secondary_check: 'Island',
         },
-      ],
-    },
-    {
-      name: 'Road Lands (Aetherdrift Cycle)',
-      sim_flags: { entersTappedAlways: true, isRoadLand: true },
-      behavior: {
-        etb_tapped: true,
-        untap_condition: 'control_artifact_or_vehicle',
-        logic: 'synergy_check',
-      },
-      mana_abilities: [{ cost: '{T}', produces: 'Choice of [Color A] or [Color B]' }],
-      lands: [
-        { name: 'Country Roads', color_identity: ['G', 'W'] },
-        { name: 'Foul Roads', color_identity: ['B', 'G'] },
-        { name: 'Reef Roads', color_identity: ['U', 'R'] },
-        { name: 'Rocky Roads', color_identity: ['R', 'W'] },
-        { name: 'Wild Roads', color_identity: ['R', 'G'] },
       ],
     },
     {
@@ -788,58 +729,34 @@ const LANDS_DATA = {
     },
     {
       name: 'MDFCs & Modal Lands',
-      behavior: { is_mdfc: true, face_logic: 'spell_front_land_back' },
-      sim_flags: { isMDFCLand: true, entersTappedAlways: false },
-      mana_abilities: [{ cost: '{T}', produces: '[Single Color]' }],
+      behavior: {
+        is_mdfc: true,
+        face_logic: 'spell_front_land_back',
+        etb_logic: 'pay_3_life_or_enter_tapped',
+      },
+      sim_flags: { isMDFCLand: true, entersTappedAlways: false, lifeloss: 3 },
+      mana_abilities: [
+        {
+          cost: '{T}',
+          produces: '[Single Color]',
+          note: "As this land enters, you may pay 3 life. If you don't, it enters tapped.",
+        },
+      ],
       lands: [
-        {
-          name: "Agadeem's Awakening",
-          color_identity: ['B'],
-          back_face: 'Agadeem, the Undercrypt',
-          untap_cost: { life: 3 },
-        },
-        {
-          name: 'Sea Gate Restoration',
-          color_identity: ['U'],
-          back_face: 'Sea Gate, Reborn',
-          untap_cost: { life: 3 },
-        },
-        {
-          name: 'Shatterskull Smashing',
-          color_identity: ['R'],
-          back_face: 'Shatterskull, the Hammer Pass',
-          untap_cost: { life: 3 },
-        },
-        {
-          name: 'Turntimber Symbiosis',
-          color_identity: ['G'],
-          back_face: 'Turntimber, Serpentine Wood',
-          untap_cost: { life: 3 },
-        },
-        {
-          name: "Emeria's Call",
-          color_identity: ['W'],
-          back_face: 'Emeria, Shattered Skyclave',
-          untap_cost: { life: 3 },
-        },
-        {
-          name: 'Sink into Stupor',
-          color_identity: ['U'],
-          back_face: 'Soporific Springs',
-          untap_cost: { life: 3 },
-        },
-        {
-          name: 'Fell the Profane',
-          color_identity: ['B'],
-          back_face: 'Fell Mire',
-          untap_cost: { life: 3 },
-        },
-        {
-          name: 'Bala Ged Recovery',
-          color_identity: ['G'],
-          back_face: 'Bala Ged Sanctuary',
-          etb_tapped: true,
-        },
+        { name: 'Boggart Trawler', color_identity: ['B'] },
+        { name: 'Bridgeworks Battle', color_identity: ['W'] },
+        { name: 'Disciple of Freyalise', color_identity: ['G'] },
+        { name: "Emeria's Call", color_identity: ['W'] },
+        { name: 'Fell the Profane', color_identity: ['B'] },
+        { name: 'Hydroelectric Specimen', color_identity: ['U'] },
+        { name: 'Pinnacle Monk', color_identity: ['W'] },
+        { name: 'Razorgrass Ambush', color_identity: ['G'] },
+        { name: 'Sea Gate Restoration', color_identity: ['U'] },
+        { name: 'Shatterskull Smashing', color_identity: ['R'] },
+        { name: 'Sink into Stupor', color_identity: ['U'] },
+        { name: 'Sundering Eruption', color_identity: ['R'] },
+        { name: 'Turntimber Symbiosis', color_identity: ['G'] },
+        { name: 'Witch Enchanter', color_identity: ['W'] },
       ],
     },
     {
@@ -863,8 +780,8 @@ const LANDS_DATA = {
     {
       name: 'Bicycle Lands (Amonkhet)',
       behavior: { etb_tapped: true, cycling: true, has_basic_types: true, searchable: true },
-      mana_abilities: [{ cost: '{T}', produces: 'Choice of [Color A] or [Color B]' }],
       sim_flags: { entersTappedAlways: true },
+      mana_abilities: [{ cost: '{T}', produces: 'Choice of [Color A] or [Color B]' }],
       lands: [
         { name: 'Irrigated Farmland', color_identity: ['W', 'U'], types: ['Plains', 'Island'] },
         { name: 'Fetid Pools', color_identity: ['U', 'B'], types: ['Island', 'Swamp'] },
@@ -874,27 +791,10 @@ const LANDS_DATA = {
       ],
     },
     {
-      name: 'Snarl Lands (Strixhaven)',
-      behavior: {
-        etb_tapped: true,
-        untap_condition: 'reveal_land_type_from_hand',
-        has_basic_types: false,
-      },
-      mana_abilities: [{ cost: '{T}', produces: 'Choice of [Color A] or [Color B]' }],
-      sim_flags: { isReveal: true, entersTappedAlways: true },
-      lands: [
-        { name: 'Shineshadow Snarl', color_identity: ['W', 'B'], reveals: ['Plains', 'Swamp'] },
-        { name: 'Frostboil Snarl', color_identity: ['U', 'R'], reveals: ['Island', 'Mountain'] },
-        { name: 'Necroblossom Snarl', color_identity: ['B', 'G'], reveals: ['Swamp', 'Forest'] },
-        { name: 'Furycalm Snarl', color_identity: ['R', 'W'], reveals: ['Mountain', 'Plains'] },
-        { name: 'Vineglimmer Snarl', color_identity: ['G', 'U'], reveals: ['Forest', 'Island'] },
-      ],
-    },
-    {
       name: 'Gain Lands (KTK / Core Set)',
       behavior: { etb_tapped: true, etb_trigger: 'gain_1_life' },
-      mana_abilities: [{ cost: '{T}', produces: 'Choice of [Color A] or [Color B]' }],
       sim_flags: { entersTappedAlways: true },
+      mana_abilities: [{ cost: '{T}', produces: 'Choice of [Color A] or [Color B]' }],
       lands: [
         { name: 'Tranquil Cove', color_identity: ['W', 'U'] },
         { name: 'Dismal Backwater', color_identity: ['U', 'B'] },
@@ -911,8 +811,8 @@ const LANDS_DATA = {
     {
       name: 'Refuge Lands (Zendikar)',
       behavior: { etb_tapped: true, etb_trigger: 'gain_1_life' },
-      mana_abilities: [{ cost: '{T}', produces: 'Choice of [Color A] or [Color B]' }],
       sim_flags: { entersTappedAlways: true },
+      mana_abilities: [{ cost: '{T}', produces: 'Choice of [Color A] or [Color B]' }],
       lands: [
         { name: 'Sejiri Refuge', color_identity: ['W', 'U'] },
         { name: 'Jwar Isle Refuge', color_identity: ['U', 'B'] },
@@ -924,8 +824,8 @@ const LANDS_DATA = {
     {
       name: 'Coastal Lands (Invasion)',
       behavior: { etb_tapped: true },
-      mana_abilities: [{ cost: '{T}', produces: 'Choice of [Color A] or [Color B]' }],
       sim_flags: { entersTappedAlways: true },
+      mana_abilities: [{ cost: '{T}', produces: 'Choice of [Color A] or [Color B]' }],
       lands: [
         { name: 'Coastal Tower', color_identity: ['W', 'U'] },
         { name: 'Salt Marsh', color_identity: ['U', 'B'] },
@@ -937,10 +837,10 @@ const LANDS_DATA = {
     {
       name: 'Depletion Lands (Mercadian Masques)',
       behavior: { etb_tapped: true, logic: 'depletion_counters' },
+      sim_flags: { entersTappedAlways: true },
       mana_abilities: [
         { cost: '{T}, Remove depletion counter', produces: '[Color A] or [Color B]' },
       ],
-      sim_flags: { entersTappedAlways: true },
       lands: [
         { name: 'Saprazzan Skerry', color_identity: ['W', 'U'] },
         { name: 'Remote Farm', color_identity: ['U', 'B'] },
@@ -954,23 +854,10 @@ const LANDS_DATA = {
       ],
     },
     {
-      name: 'Snow Dual Tap Lands (Ice Age)',
-      behavior: { etb_tapped: true, supertype: 'Snow' },
-      mana_abilities: [{ cost: '{T}', produces: 'Choice of [Color A] or [Color B]' }],
-      sim_flags: { entersTappedAlways: true },
-      lands: [
-        { name: 'Arctic Flats', color_identity: ['W', 'U'] },
-        { name: 'Boreal Shelf', color_identity: ['W', 'U'] },
-        { name: 'Frost Marsh', color_identity: ['U', 'B'] },
-        { name: 'Highland Weald', color_identity: ['R', 'G'] },
-        { name: 'Tresserhorn Sinks', color_identity: ['U', 'B'] },
-      ],
-    },
-    {
       name: 'Thriving Lands (Commander Legends)',
       behavior: { etb_tapped: true, etb_trigger: 'choose_color_on_etb' },
+      sim_flags: { entersTappedAlways: true, isThriving: true },
       mana_abilities: [{ cost: '{T}', produces: '[Primary Color] or chosen color' }],
-      sim_flags: { entersTappedAlways: true },
       lands: [
         { name: 'Thriving Bluff', color_identity: ['R'] },
         { name: 'Thriving Grove', color_identity: ['G'] },
@@ -981,27 +868,23 @@ const LANDS_DATA = {
     },
     {
       name: 'Horizon Lands',
-      behavior: { etb_tapped: false, logic: 'can_sacrifice_draw' },
-      mana_abilities: [{ cost: '{T}', produces: '[Color A] or [Color B]' }],
-      sim_flags: { entersTappedAlways: false },
+      behavior: { etb_tapped: false, logic: 'pay_1_life_for_color' },
+      sim_flags: { isHorizonLand: true, entersTappedAlways: false, lifeloss: 1 },
+      mana_abilities: [{ cost: '{T}, Pay 1 Life', produces: '[Color A] or [Color B]' }],
       lands: [
         { name: 'Horizon Canopy', color_identity: ['G', 'W'] },
-        { name: 'Grove of the Burnwillows', color_identity: ['R', 'G'] },
-        { name: 'Nimbus Maze', color_identity: ['W', 'U'] },
-        { name: 'River of Tears', color_identity: ['U', 'B'] },
-        { name: 'Firepond', color_identity: ['U', 'R'] },
-        { name: 'Sunbaked Canyon', color_identity: ['R', 'W'] },
+        { name: 'Fiery Islet', color_identity: ['U', 'R'] },
         { name: 'Nurturing Peatland', color_identity: ['B', 'G'] },
         { name: 'Silent Clearing', color_identity: ['W', 'B'] },
-        { name: 'Fiery Islet', color_identity: ['U', 'R'] },
+        { name: 'Sunbaked Canyon', color_identity: ['R', 'W'] },
         { name: 'Waterlogged Grove', color_identity: ['G', 'U'] },
       ],
     },
     {
       name: 'Man Lands (Creature Lands)',
       behavior: { etb_tapped: true, logic: 'can_animate_as_creature' },
-      mana_abilities: [{ cost: '{T}', produces: 'Choice of [Color A] or [Color B]' }],
       sim_flags: { entersTappedAlways: true, isManLand: true },
+      mana_abilities: [{ cost: '{T}', produces: 'Choice of [Color A] or [Color B]' }],
       lands: [
         { name: 'Celestial Colonnade', color_identity: ['W', 'U'] },
         { name: 'Creeping Tar Pit', color_identity: ['U', 'B'] },
@@ -1018,10 +901,10 @@ const LANDS_DATA = {
     {
       name: 'Storage Lands',
       behavior: { etb_tapped: true, logic: 'storage_counters' },
+      sim_flags: { entersTappedAlways: true },
       mana_abilities: [
         { cost: '{T}, Remove storage counter(s)', produces: '[Color A] per counter removed' },
       ],
-      sim_flags: { entersTappedAlways: true },
       lands: [
         { name: 'Calciform Pools', color_identity: ['W', 'U'] },
         { name: 'Dreadship Reef', color_identity: ['U', 'B'] },
@@ -1033,11 +916,11 @@ const LANDS_DATA = {
     {
       name: 'Odyssey Filter Lands',
       behavior: { etb_tapped: false, logic: 'filter_mana_1_generic' },
+      sim_flags: { entersTappedAlways: false, isOdysseyFilter: true },
       mana_abilities: [
         { mode: 1, cost: '{T}', produces: '{C}' },
         { mode: 2, cost: '{1}, {T}', produces: 'Choice of {A}{A}, {A}{B}, or {B}{B}' },
       ],
-      sim_flags: { entersTappedAlways: false },
       lands: [
         { name: 'Darkwater Catacombs', color_identity: ['U', 'B'] },
         { name: 'Shadowblood Ridge', color_identity: ['B', 'R'] },
@@ -1049,11 +932,11 @@ const LANDS_DATA = {
     {
       name: 'Fallout Filter Lands',
       behavior: { etb_tapped: false, logic: 'filter_mana_1_generic' },
+      sim_flags: { entersTappedAlways: false, isOdysseyFilter: true },
       mana_abilities: [
         { mode: 1, cost: '{T}', produces: '{C}' },
         { mode: 2, cost: '{1}, {T}', produces: 'Choice of {A}{A}, {A}{B}, or {B}{B}' },
       ],
-      sim_flags: { entersTappedAlways: false },
       lands: [
         { name: 'Desolate Mire', color_identity: ['U', 'B'] },
         { name: 'Ferrous Lake', color_identity: ['B', 'R'] },
@@ -1065,8 +948,8 @@ const LANDS_DATA = {
     {
       name: 'Extra Bounce Lands',
       behavior: { etb_tapped: true, logic: 'return_land_on_etb' },
-      mana_abilities: [{ cost: '{T}', produces: '[Color]' }],
       sim_flags: { entersTappedAlways: true, isBounce: true },
+      mana_abilities: [{ cost: '{T}', produces: '[Color]' }],
       lands: [
         { name: 'Coral Atoll', color_identity: ['U'] },
         { name: 'Dormant Volcano', color_identity: ['R'] },
@@ -1082,8 +965,8 @@ const LANDS_DATA = {
     {
       name: 'Various Utility Tap Lands',
       behavior: { etb_tapped: true },
-      mana_abilities: [{ cost: '{T}', produces: 'Any color' }],
       sim_flags: { entersTappedAlways: true },
+      mana_abilities: [{ cost: '{T}', produces: 'Any color' }],
       lands: [
         { name: 'Path of Ancestry', color_identity: ['W', 'U', 'B', 'R', 'G'] },
         { name: 'Rupture Spire', color_identity: ['W', 'U', 'B', 'R', 'G'] },
