@@ -210,6 +210,13 @@ describe('doesLandEnterTapped', () => {
     expect(doesLandEnterTapped(shock, [], 1, false)).toBe(true);
   });
 
+  it('an MDFC land always returns true from doesLandEnterTapped on any turn', () => {
+    const mdfc = makeLand({ isMDFCLand: true });
+    expect(doesLandEnterTapped(mdfc, [], 1, false)).toBe(true);
+    expect(doesLandEnterTapped(mdfc, [], 4, false)).toBe(true);
+    expect(doesLandEnterTapped(mdfc, [], 5, false)).toBe(true);
+  });
+
   it('a fast land enters untapped when ≤ 2 lands are already in play', () => {
     const fast = makeLand({ isFast: true });
     const bf = [perm(makeLand({ name: 'Island' })), perm(makeLand({ name: 'Swamp' }))];
@@ -224,6 +231,33 @@ describe('doesLandEnterTapped', () => {
       perm(makeLand({ name: 'C', isLand: true })),
     ];
     expect(doesLandEnterTapped(fast, bf, 4, false)).toBe(true);
+  });
+
+  it('a slow land enters tapped when < 2 lands are already in play', () => {
+    const slow = makeLand({ isSlowLand: true });
+    const bf = [perm(makeLand({ name: 'Island' }))];
+    expect(doesLandEnterTapped(slow, bf, 2, false)).toBe(true);
+  });
+
+  it('a slow land enters tapped on an empty battlefield', () => {
+    const slow = makeLand({ isSlowLand: true });
+    expect(doesLandEnterTapped(slow, [], 1, false)).toBe(true);
+  });
+
+  it('a slow land enters untapped when exactly 2 lands are already in play', () => {
+    const slow = makeLand({ isSlowLand: true });
+    const bf = [perm(makeLand({ name: 'Forest' })), perm(makeLand({ name: 'Mountain' }))];
+    expect(doesLandEnterTapped(slow, bf, 3, false)).toBe(false);
+  });
+
+  it('a slow land enters untapped when > 2 lands are already in play', () => {
+    const slow = makeLand({ isSlowLand: true });
+    const bf = [
+      perm(makeLand({ name: 'Forest' })),
+      perm(makeLand({ name: 'Mountain' })),
+      perm(makeLand({ name: 'Island' })),
+    ];
+    expect(doesLandEnterTapped(slow, bf, 4, false)).toBe(false);
   });
 
   it('a battle land enters untapped when ≥ 2 basics are in play', () => {
@@ -395,6 +429,272 @@ describe('calculateManaAvailability', () => {
     expect(result.sources).toHaveLength(1);
     expect(result.sources[0].produces).toContain('U');
     expect(result.sources[0].produces).toContain('B');
+  });
+
+  // ── Filter Lands ──────────────────────────────────────────────────────────
+  // A Filter Land (e.g. Mystic Gate) has two modes:
+  //   Mode 1 – {T} → {C}                (no precondition, always available)
+  //   Mode 2 – {A} or {B}, {T} → {A}{A}/{A}{B}/{B}{B}  (requires 1 colored mana
+  //             matching one of the filter land's OWN colors — {C} cannot pay)
+  // The simulator: when a source producing color A or B is available it consumes
+  // that source and adds 2 colored production; otherwise falls back to {C}.
+
+  it('Filter Land alone produces {C} (mode 1 fallback — no other mana)', () => {
+    const filter = makeLand({
+      name: 'Mystic Gate',
+      isFilterLand: true,
+      produces: ['W', 'U'],
+      manaAmount: 1,
+    });
+    const result = calculateManaAvailability([perm(filter)]);
+    expect(result.total).toBe(1);
+    expect(result.sources).toHaveLength(1);
+    expect(result.sources[0].produces).toEqual(['C']);
+    expect(result.colors.W).toBe(0);
+    expect(result.colors.U).toBe(0);
+    expect(result.colors.C).toBe(1);
+  });
+
+  it('Filter Land with a matching colored source: consumes it and produces 2 colored (mode 2)', () => {
+    const filter = makeLand({
+      name: 'Mystic Gate',
+      isFilterLand: true,
+      produces: ['W', 'U'],
+      manaAmount: 1,
+    });
+    const island = makeLand({ name: 'Island', produces: ['U'] });
+    const result = calculateManaAvailability([perm(island), perm(filter)]);
+    // Island {U} matches Mystic Gate's colors (W/U); consumed as activation cost.
+    // Filter produces 2 W/U — net total = 2.
+    expect(result.total).toBe(2);
+    expect(result.sources).toHaveLength(2);
+    result.sources.forEach(s => {
+      expect(s.produces.some(c => c === 'W' || c === 'U')).toBe(true);
+    });
+  });
+
+  it('Filter Land with colorless-only source falls back to mode 1 — {C} cannot pay the cost', () => {
+    const filter = makeLand({
+      name: 'Flooded Grove',
+      isFilterLand: true,
+      produces: ['G', 'U'],
+      manaAmount: 1,
+    });
+    const solRing = makeArtifact({ name: 'Sol Ring', produces: ['C'], manaAmount: 2 });
+    const result = calculateManaAvailability([perm(solRing), perm(filter)]);
+    // Sol Ring gives 2 {C}; neither source produces G or U, so mode 2 cannot fire.
+    // Filter falls back to mode 1 → 1 {C}. Total = 3 {C}, no colored mana.
+    expect(result.total).toBe(3);
+    expect(result.colors.C).toBe(3);
+    expect(result.colors.G).toBe(0);
+    expect(result.colors.U).toBe(0);
+  });
+
+  it('Filter Land with a non-matching colored source falls back to mode 1', () => {
+    const filter = makeLand({
+      name: 'Mystic Gate',
+      isFilterLand: true,
+      produces: ['W', 'U'],
+      manaAmount: 1,
+    });
+    // Mountain only provides {R}, which is not in Mystic Gate's W/U colors.
+    const mountain = makeLand({ name: 'Mountain', produces: ['R'] });
+    const result = calculateManaAvailability([perm(mountain), perm(filter)]);
+    // No W or U source available — mode 2 cannot fire. Filter → {C}. Total = 2.
+    expect(result.total).toBe(2);
+    expect(result.colors.R).toBe(1);
+    expect(result.colors.W).toBe(0);
+    expect(result.colors.U).toBe(0);
+    expect(result.colors.C).toBe(1);
+  });
+
+  it('two Filter Lands chain — first uses the non-filter land, second uses the colored output of the first', () => {
+    // filter1 (W/U) consumes Island {U} (matching color) → produces 2 W/U.
+    // filter2 (G/U) consumes one of those W/U sources (U matches) → produces 2 G/U.
+    // Net: island consumed + 2 filter1 (1 consumed by filter2) + 2 filter2 = 3 total.
+    const filter1 = makeLand({ name: 'Mystic Gate', isFilterLand: true, produces: ['W', 'U'] });
+    const filter2 = makeLand({ name: 'Flooded Grove', isFilterLand: true, produces: ['G', 'U'] });
+    const island = makeLand({ name: 'Island', produces: ['U'] });
+    const result = calculateManaAvailability([perm(island), perm(filter1), perm(filter2)]);
+    expect(result.total).toBe(3);
+  });
+
+  // ── Odyssey / Fallout Filter Lands ────────────────────────────────────────
+  // Same two modes but the activation is {1},{T} — any generic mana qualifies,
+  // including pure colorless sources like Sol Ring.  Off-color mana also qualifies.
+  // Prefers consuming a colorless source to preserve coloured pips.
+
+  it('Odyssey Filter Land alone produces {C} (mode 1 fallback — no other mana)', () => {
+    const filter = makeLand({
+      name: 'Skycloud Expanse',
+      isOdysseyFilterLand: true,
+      produces: ['W', 'U'],
+      manaAmount: 1,
+    });
+    const result = calculateManaAvailability([perm(filter)]);
+    expect(result.total).toBe(1);
+    expect(result.sources[0].produces).toEqual(['C']);
+    expect(result.colors.W).toBe(0);
+    expect(result.colors.U).toBe(0);
+  });
+
+  it('Odyssey Filter Land with a colorless source (Sol Ring): {C} DOES pay the {1} cost', () => {
+    const filter = makeLand({
+      name: 'Skycloud Expanse',
+      isOdysseyFilterLand: true,
+      produces: ['W', 'U'],
+      manaAmount: 1,
+    });
+    const solRing = makeArtifact({ name: 'Sol Ring', produces: ['C'], manaAmount: 2 });
+    const result = calculateManaAvailability([perm(solRing), perm(filter)]);
+    // Sol Ring gives 2 {C}; one is consumed as the {1} cost → 1 {C} remains + 2 W/U = 3 total.
+    expect(result.total).toBe(3);
+    expect(result.colors.C).toBe(1);
+    expect(result.colors.W).toBeGreaterThan(0);
+    expect(result.colors.U).toBeGreaterThan(0);
+  });
+
+  it('Odyssey Filter Land with an off-color source: any mana pays the {1} cost', () => {
+    const filter = makeLand({
+      name: 'Skycloud Expanse',
+      isOdysseyFilterLand: true,
+      produces: ['W', 'U'],
+      manaAmount: 1,
+    });
+    // Mountain {R} is off-color but still generic enough to pay {1}.
+    const mountain = makeLand({ name: 'Mountain', produces: ['R'] });
+    const result = calculateManaAvailability([perm(mountain), perm(filter)]);
+    // {R} consumed as {1}; filter adds 2 W/U — net total = 2.
+    expect(result.total).toBe(2);
+    expect(result.colors.R).toBe(0);
+    expect(result.colors.W).toBeGreaterThan(0);
+    expect(result.colors.U).toBeGreaterThan(0);
+  });
+
+  it('Odyssey Filter Land prefers consuming the colorless source over a colored one', () => {
+    const filter = makeLand({
+      name: 'Skycloud Expanse',
+      isOdysseyFilterLand: true,
+      produces: ['W', 'U'],
+      manaAmount: 1,
+    });
+    const island = makeLand({ name: 'Island', produces: ['U'] });
+    const solRing = makeArtifact({ name: 'Sol Ring', produces: ['C'], manaAmount: 1 });
+    const result = calculateManaAvailability([perm(island), perm(solRing), perm(filter)]);
+    // Sol Ring {C} is consumed (preferred over Island {U}).
+    // Remaining: Island {U} + 2 W/U from filter = 3 total; U stays at ≥1.
+    expect(result.total).toBe(3);
+    expect(result.colors.U).toBeGreaterThan(0); // Island still contributes
+    expect(result.colors.C).toBe(0); // Sol Ring was consumed
+  });
+
+  // ── Horizon Lands ─────────────────────────────────────────────────────────
+  // Horizon Lands (e.g. Horizon Canopy) enter untapped and produce colored mana
+  // at the cost of 1 life per activation.  There is no colorless opt-out.
+  // Mana production is modelled identically to a plain untapped dual.
+  // Life loss is tracked separately in calculateBattlefieldDamage (turns 1-5).
+
+  it('Horizon Land produces 1 colored mana source (enters untapped, no extra rules)', () => {
+    const hl = makeLand({
+      name: 'Horizon Canopy',
+      isHorizonLand: true,
+      produces: ['G', 'W'],
+      manaAmount: 1,
+    });
+    const result = calculateManaAvailability([perm(hl)]);
+    expect(result.total).toBe(1);
+    expect(result.sources).toHaveLength(1);
+    expect(result.sources[0].produces).toEqual(['G', 'W']);
+    expect(result.colors.G).toBe(1);
+    expect(result.colors.W).toBe(1);
+  });
+
+  it('two Horizon Lands produce 2 independent colored mana sources', () => {
+    const canopy = makeLand({ name: 'Horizon Canopy', isHorizonLand: true, produces: ['G', 'W'] });
+    const islet = makeLand({ name: 'Fiery Islet', isHorizonLand: true, produces: ['U', 'R'] });
+    const result = calculateManaAvailability([perm(canopy), perm(islet)]);
+    expect(result.total).toBe(2);
+    expect(result.colors.G).toBe(1);
+    expect(result.colors.W).toBe(1);
+    expect(result.colors.U).toBe(1);
+    expect(result.colors.R).toBe(1);
+  });
+
+  // ── Verge Lands ───────────────────────────────────────────────────────
+  // A Verge Land (e.g. Sunbillow Verge) always produces its primary color but
+  // only adds the secondary color when the required basic-land subtype is
+  // already on the battlefield.
+
+  it('Verge Land produces only primary color when required subtype is absent', () => {
+    const verge = makeLand({
+      name: 'Sunbillow Verge',
+      isVerge: true,
+      produces: ['W', 'R'],
+      vergePrimary: 'W',
+      vergeSecondaryCheck: 'Mountain',
+      landSubtypes: [],
+    });
+    // Only a Plains on the battlefield — no Mountain
+    const plains = makeLand({ name: 'Plains', landSubtypes: ['Plains'], produces: ['W'] });
+    const result = calculateManaAvailability([perm(verge), perm(plains)]);
+    expect(result.colors.W).toBe(2); // plains + verge primary
+    expect(result.colors.R).toBe(0); // secondary blocked
+    // Verge source should only offer the primary color
+    const vergeSource = result.sources.find(
+      s =>
+        (s.produces.length === 1 &&
+          s.produces[0] === 'W' &&
+          result.sources.filter(x => x === s).length === 0) ||
+        true
+    );
+    expect(result.sources.every(s => !s.produces.includes('R'))).toBe(true);
+  });
+
+  it('Verge Land produces both colors when required subtype is on the battlefield', () => {
+    const verge = makeLand({
+      name: 'Sunbillow Verge',
+      isVerge: true,
+      produces: ['W', 'R'],
+      vergePrimary: 'W',
+      vergeSecondaryCheck: 'Mountain',
+      landSubtypes: [],
+    });
+    const mountain = makeLand({
+      name: 'Mountain',
+      landSubtypes: ['Mountain'],
+      produces: ['R'],
+      isBasic: true,
+    });
+    const result = calculateManaAvailability([perm(verge), perm(mountain)]);
+    // verge: both colors; mountain: {R} → W≥1, R≥2
+    expect(result.colors.W).toBeGreaterThanOrEqual(1);
+    expect(result.colors.R).toBeGreaterThanOrEqual(2);
+    const vergeSource = result.sources.find(s => s.produces.includes('W'));
+    expect(vergeSource).toBeDefined();
+    expect(vergeSource.produces).toContain('R');
+  });
+
+  it('Verge Land: Mountain on battlefield enables {R} even via shock land subtype', () => {
+    const verge = makeLand({
+      name: 'Riverpyre Verge',
+      isVerge: true,
+      produces: ['U', 'R'],
+      vergePrimary: 'U',
+      vergeSecondaryCheck: 'Mountain',
+      landSubtypes: [],
+    });
+    // Steam Vents has the Mountain subtype
+    const steamVents = makeLand({
+      name: 'Steam Vents',
+      produces: ['U', 'R'],
+      landSubtypes: ['Island', 'Mountain'],
+      isShockLand: true,
+    });
+    const result = calculateManaAvailability([perm(verge), perm(steamVents)]);
+    expect(result.colors.R).toBeGreaterThanOrEqual(1);
+    // Verge source should include 'R'
+    const vs = result.sources.find(s => s.produces.includes('U') && s.produces.includes('R'));
+    expect(vs).toBeDefined();
   });
 });
 
@@ -796,6 +1096,171 @@ describe('playLand', () => {
     const result = playLand(forest, [forest], [], [], [], 1, null, [], null, false);
     expect(result).toBe(0);
   });
+
+  // -- MDFC Lands --
+  // Turns 1–4: pays 3 life, enters untapped.
+  // Turn 5+: enters tapped, no life paid.
+
+  it('MDFC land enters untapped and costs 3 life on turn ≤ 4', () => {
+    const mdfc = makeLand({
+      name: 'Turntimber Symbiosis',
+      isMDFCLand: true,
+      produces: ['G'],
+      lifeloss: 3,
+    });
+    const hand = [mdfc];
+    const bf = [];
+    const lifeLoss = playLand(mdfc, hand, bf, [], [], 2, null, [], null, false);
+    expect(bf[0].tapped).toBe(false);
+    expect(lifeLoss).toBe(3);
+  });
+
+  it('MDFC land enters untapped on the turn-4 boundary and costs 3 life', () => {
+    const mdfc = makeLand({
+      name: 'Fell the Profane',
+      isMDFCLand: true,
+      produces: ['B'],
+      lifeloss: 3,
+    });
+    const hand = [mdfc];
+    const bf = [];
+    const lifeLoss = playLand(mdfc, hand, bf, [], [], 4, null, [], null, false);
+    expect(bf[0].tapped).toBe(false);
+    expect(lifeLoss).toBe(3);
+  });
+
+  it('MDFC land enters tapped and costs no life on turn 5', () => {
+    const mdfc = makeLand({
+      name: "Emeria's Call",
+      isMDFCLand: true,
+      produces: ['W'],
+      lifeloss: 3,
+    });
+    const hand = [mdfc];
+    const bf = [];
+    const lifeLoss = playLand(mdfc, hand, bf, [], [], 5, null, [], null, false);
+    expect(bf[0].tapped).toBe(true);
+    expect(lifeLoss).toBe(0);
+  });
+
+  it('MDFC land enters tapped and costs no life on turn 7', () => {
+    const mdfc = makeLand({
+      name: 'Sea Gate Restoration',
+      isMDFCLand: true,
+      produces: ['U'],
+      lifeloss: 3,
+    });
+    const hand = [mdfc];
+    const bf = [];
+    const lifeLoss = playLand(mdfc, hand, bf, [], [], 7, null, [], null, false);
+    expect(bf[0].tapped).toBe(true);
+    expect(lifeLoss).toBe(0);
+  });
+
+  it('MDFC land is removed from hand and placed on battlefield', () => {
+    const mdfc = makeLand({
+      name: 'Shatterskull Smashing',
+      isMDFCLand: true,
+      produces: ['R'],
+      lifeloss: 3,
+    });
+    const hand = [mdfc];
+    const bf = [];
+    playLand(mdfc, hand, bf, [], [], 1, null, [], null, false);
+    expect(hand).toHaveLength(0);
+    expect(bf).toHaveLength(1);
+    expect(bf[0].card.name).toBe('Shatterskull Smashing');
+  });
+
+  // -- Thriving Lands -------------------------------------------------------
+  // On ETB, a Thriving Land looks at the key-card pip frequencies and assigns
+  // the most-demanded color (excluding its own primary) as the second color.
+
+  it('Thriving Land: second color is chosen from key card pip frequency', () => {
+    const thriving = makeLand({
+      name: 'Thriving Bluff',
+      isThriving: true,
+      produces: ['R'],
+    });
+    // Key card needs {B}{B} → B is the most-demanded non-R color
+    const parsedDeck = {
+      spells: [{ name: 'Damnation', manaCost: '{2}{B}{B}' }],
+      creatures: [],
+      artifacts: [],
+    };
+    const hand = [thriving];
+    const bf = [];
+    const log = { actions: [] };
+    playLand(thriving, hand, bf, [], [], 1, log, ['Damnation'], parsedDeck, false);
+    expect(bf[0].card.produces).toContain('R');
+    expect(bf[0].card.produces).toContain('B');
+    expect(bf[0].card.produces).toHaveLength(2);
+  });
+
+  it('Thriving Land: picks highest-frequency pip when key card has multiple non-primary colors', () => {
+    const thriving = makeLand({
+      name: 'Thriving Grove',
+      isThriving: true,
+      produces: ['G'],
+    });
+    // {U}{U}{B} → U appears twice, B once → second color should be U
+    const parsedDeck = {
+      spells: [
+        { name: 'Counterspell', manaCost: '{U}{U}' },
+        { name: 'Dark Ritual', manaCost: '{B}' },
+      ],
+      creatures: [],
+      artifacts: [],
+    };
+    const hand = [thriving];
+    const bf = [];
+    const log = { actions: [] };
+    playLand(
+      thriving,
+      hand,
+      bf,
+      [],
+      [],
+      1,
+      log,
+      ['Counterspell', 'Dark Ritual'],
+      parsedDeck,
+      false
+    );
+    expect(bf[0].card.produces).toContain('G');
+    expect(bf[0].card.produces).toContain('U'); // U wins the frequency race
+    expect(bf[0].card.produces).not.toContain('B');
+  });
+
+  it('Thriving Land: leaves produces unchanged when no key cards are selected', () => {
+    const thriving = makeLand({
+      name: 'Thriving Isle',
+      isThriving: true,
+      produces: ['U'],
+    });
+    const hand = [thriving];
+    const bf = [];
+    playLand(thriving, hand, bf, [], [], 1, null, [], null, false);
+    // No key cards → frequency map empty → produces stays as-is
+    expect(bf[0].card.produces).toEqual(['U']);
+  });
+
+  it('Thriving Land: logs the chosen second color action', () => {
+    const thriving = makeLand({
+      name: 'Thriving Heath',
+      isThriving: true,
+      produces: ['W'],
+    });
+    const parsedDeck = {
+      spells: [{ name: 'Lightning Bolt', manaCost: '{R}' }],
+      creatures: [],
+      artifacts: [],
+    };
+    const log = { actions: [] };
+    playLand(thriving, [thriving], [], [], [], 1, log, ['Lightning Bolt'], parsedDeck, false);
+    expect(log.actions.some(a => a.includes('Thriving Land chose second color'))).toBe(true);
+    expect(log.actions.some(a => a.includes('R'))).toBe(true);
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -982,11 +1447,12 @@ describe('calculateBattlefieldDamage', () => {
     const crypt = { name: 'Mana Crypt', isManaArtifact: true, isLand: false };
     const tomb = makeLand({ name: 'Ancient Tomb', isAncientTomb: true, lifeloss: 2 });
     const pain = makeLand({ name: 'Adarkar Wastes', isPainLand: true, lifeloss: 1 });
+    const hl = makeLand({ name: 'Horizon Canopy', isHorizonLand: true, lifeloss: 1 });
     const { total, breakdown } = calculateBattlefieldDamage(
-      [perm(crypt), perm(tomb), perm(pain)],
+      [perm(crypt), perm(tomb), perm(pain), perm(hl)],
       3
     );
-    expect(total).toBe(4.5); // 1.5 (Crypt) + 2 (Tomb) + 1 (Pain)
-    expect(breakdown).toHaveLength(3);
+    expect(total).toBe(5.5); // 1.5 (Crypt) + 2 (Tomb) + 1 (Pain) + 1 (Horizon)
+    expect(breakdown).toHaveLength(4);
   });
 });

@@ -68,9 +68,13 @@ export const matchesRampFilter = (land, rampSpell) => {
 // ─────────────────────────────────────────────────────────────────────────────
 export const doesLandEnterTapped = (land, battlefield, turn, commanderMode) => {
   if (land.isShockLand) return true;
+  if (land.isMDFCLand) return true;
 
   if (land.isFast) {
     return battlefield.filter(p => p.card.isLand).length > 2;
+  }
+  if (land.isSlowLand) {
+    return battlefield.filter(p => p.card.isLand).length < 2;
   }
   if (land.isBattleLand) {
     return battlefield.filter(p => p.card.isLand && p.card.isBasic).length < 2;
@@ -225,6 +229,35 @@ export const playLand = (
   hand.splice(index, 1);
   let lifeLoss = 0;
 
+  // Thriving Land: choose best second color from key cards on ETB
+  if (land.isThriving && keyCardNames && keyCardNames.length > 0 && parsedDeck) {
+    const primaryColor = land.produces[0] ?? null;
+    if (primaryColor) {
+      const allCards = [
+        ...(parsedDeck.spells || []),
+        ...(parsedDeck.creatures || []),
+        ...(parsedDeck.artifacts || []),
+      ];
+      const freq = {};
+      keyCardNames.forEach(cardName => {
+        const kc = allCards.find(c => c.name === cardName);
+        if (kc?.manaCost) {
+          (kc.manaCost.match(/\{([^}]+)\}/g) || []).forEach(s => {
+            const c = s.replace(/[{}]/g, '');
+            if (['W', 'U', 'B', 'R', 'G'].includes(c) && c !== primaryColor) {
+              freq[c] = (freq[c] || 0) + 1;
+            }
+          });
+        }
+      });
+      const ranked = Object.entries(freq).sort((a, b) => b[1] - a[1]);
+      if (ranked.length > 0) {
+        land.produces = [primaryColor, ranked[0][0]];
+        if (turnLog) turnLog.actions.push(`Thriving Land chose second color: ${ranked[0][0]}`);
+      }
+    }
+  }
+
   // City of Traitors: sacrifice when another land is played
   const cityOfTraitorsInPlay = battlefield.filter(p => p.card.isLand && p.card.isCityOfTraitors);
   if (cityOfTraitorsInPlay.length > 0 && !land.isCityOfTraitors) {
@@ -288,6 +321,13 @@ export const playLand = (
       battlefield[battlefield.length - 1].tapped = false;
       battlefield[battlefield.length - 1].enteredTapped = false;
       lifeLoss += land.lifeloss ?? 2;
+    }
+
+    // MDFC land: pay 3 life to enter untapped (turns 1–4); tapped with no cost from turn 5
+    if (land.isMDFCLand && turn <= 4 && entersTapped) {
+      battlefield[battlefield.length - 1].tapped = false;
+      battlefield[battlefield.length - 1].enteredTapped = false;
+      lifeLoss += land.lifeloss ?? 3;
     }
 
     if (isBounceCard) {
@@ -374,11 +414,44 @@ export const calculateManaAvailability = (battlefield, turn = 999) => {
     for (let i = 0; i < amt; i++) sources.push({ produces: [...produces] });
   };
 
+  // Filter lands require a specific payment to produce coloured mana.
+  // Collect them here and process in a second pass after all other mana is tallied.
+  // filterLandsToProcess    – Shadowmoor cycle: cost = {A} or {B} (one of its own colors)
+  // odysseyFilterLandsToProcess – Odyssey/Fallout: cost = {1} (any generic mana)
+  const filterLandsToProcess = [];
+  const odysseyFilterLandsToProcess = [];
+
   battlefield
     .filter(p => !p.tapped)
     .forEach(permanent => {
       const card = permanent.card;
       if (card.isLand) {
+        // ── Filter lands: defer to second pass ──────────────────────────────
+        if (card.isFilterLand) {
+          filterLandsToProcess.push(card);
+          return;
+        }
+        if (card.isOdysseyFilterLand) {
+          odysseyFilterLandsToProcess.push(card);
+          return;
+        }
+
+        // ── Verge lands: secondary color requires matching land type ─────────
+        // Primary is always available; secondary only when the required subtype
+        // is already on the battlefield.
+        if (card.isVerge) {
+          const hasRequiredType = card.vergeSecondaryCheck
+            ? battlefield.some(
+                p => p.card.isLand && p.card.landSubtypes?.includes(card.vergeSecondaryCheck)
+              )
+            : false;
+          const vergeProduces = hasRequiredType
+            ? card.produces
+            : [card.vergePrimary ?? card.produces[0]];
+          addManaSource(vergeProduces, 1);
+          return;
+        }
+
         let amt;
         if (card.scalesWithSwamps) {
           // Cabal Coffers: {2},{T} → {B} for each Swamp you control. Net = swampCount - 2.
@@ -439,6 +512,45 @@ export const calculateManaAvailability = (battlefield, turn = 999) => {
         addManaSource(card.produces, card.manaAmount || 1);
       }
     });
+
+  // ── Second pass A: Shadowmoor Filter Lands ───────────────────────────────
+  // Mode 1: {T} → {C} (no cost, always available).
+  // Mode 2: {A} or {B}, {T} → {A}{A}/{A}{B}/{B}{B}.
+  // Activation requires one mana source that produces A or B (the land's own
+  // colors). Generic colorless ({C}) cannot pay this cost.
+  filterLandsToProcess.forEach(card => {
+    const coloredIdx = sources.findIndex(s => s.produces.some(c => card.produces.includes(c)));
+    if (coloredIdx >= 0) {
+      const [removed] = sources.splice(coloredIdx, 1);
+      total--;
+      removed.produces.forEach(c => {
+        if (c in colors) colors[c] = Math.max(0, colors[c] - 1);
+      });
+      addManaSource(card.produces, 2);
+    } else {
+      addManaSource(['C'], 1);
+    }
+  });
+
+  // ── Second pass B: Odyssey / Fallout Filter Lands ─────────────────────────
+  // Mode 1: {T} → {C} (no cost, always available).
+  // Mode 2: {1}, {T} → {A}{A}/{A}{B}/{B}{B}.
+  // Activation costs any 1 generic mana — colorless ({C}) qualifies.
+  // Prefer consuming a colorless source to avoid spending a coloured pip.
+  odysseyFilterLandsToProcess.forEach(card => {
+    if (total >= 1) {
+      const cIdx = sources.findIndex(s => s.produces.includes('C'));
+      const removeIdx = cIdx >= 0 ? cIdx : 0;
+      const [removed] = sources.splice(removeIdx, 1);
+      total--;
+      removed.produces.forEach(c => {
+        if (c in colors) colors[c] = Math.max(0, colors[c] - 1);
+      });
+      addManaSource(card.produces, 2);
+    } else {
+      addManaSource(['C'], 1);
+    }
+  });
 
   return { total, colors, sources };
 };
@@ -757,6 +869,15 @@ export const calculateBattlefieldDamage = (battlefield, turn) => {
     if (painDmg > 0) {
       total += painDmg;
       breakdown.push(`Pain Land damage: -${painDmg} life`);
+    }
+
+    // Horizon Lands (Pay 1 life to produce colored mana — no colorless opt-out)
+    const horizonDmg = battlefield
+      .filter(p => p.card.isLand && p.card.isHorizonLand)
+      .reduce((s, p) => s + (p.card.lifeloss ?? 1), 0);
+    if (horizonDmg > 0) {
+      total += horizonDmg;
+      breakdown.push(`Horizon Land damage: -${horizonDmg} life`);
     }
 
     // Talismans (1 damage per talisman tapped for colored mana)
