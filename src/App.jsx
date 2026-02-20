@@ -496,7 +496,7 @@ const MTGMonteCarloAnalyzer = () => {
   // Parse deck — calls the extracted parseDeckList module
   // text: deck list string; setDeck: slot setter; label: optional name for error msg
   // ============================================================================
-  const handleParseDeck = async (text, setDeck, label) => {
+  const handleParseDeck = async (text, setDeck, clearKeyCards, label) => {
     const deck = await parseDeckList(text, {
       cardLookupMap: lookupCacheRef.current,
       apiMode,
@@ -504,6 +504,7 @@ const MTGMonteCarloAnalyzer = () => {
     });
     if (deck) {
       setDeck(deck);
+      clearKeyCards(new Set());
       setError(deck.errors?.length > 0 ? deck.errors.join(', ') : '');
     } else {
       setDeck(null);
@@ -842,7 +843,7 @@ const MTGMonteCarloAnalyzer = () => {
               />
             </div>
             <button
-              onClick={() => handleParseDeck(deckText, setParsedDeck)}
+              onClick={() => handleParseDeck(deckText, setParsedDeck, setSelectedKeyCards)}
               className="btn-primary"
             >
               Parse Deck
@@ -1013,7 +1014,7 @@ const MTGMonteCarloAnalyzer = () => {
                 style={{ height: 180 }}
               />
               <button
-                onClick={() => handleParseDeck(deckText, setParsedDeck)}
+                onClick={() => handleParseDeck(deckText, setParsedDeck, setSelectedKeyCards)}
                 className="btn-primary"
               >
                 Parse Deck
@@ -1035,7 +1036,9 @@ const MTGMonteCarloAnalyzer = () => {
                 style={{ height: 180 }}
               />
               <button
-                onClick={() => handleParseDeck(deckTextB, setParsedDeckB, 'Deck B')}
+                onClick={() =>
+                  handleParseDeck(deckTextB, setParsedDeckB, setSelectedKeyCardsB, 'Deck B')
+                }
                 className="btn-primary"
               >
                 Parse Deck
