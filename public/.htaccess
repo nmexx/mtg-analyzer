@@ -9,6 +9,11 @@
 
 <IfModule mod_headers.c>
 
+  # ── HTTPS enforcement (HSTS) ──────────────────────────────────────────────
+  # Tells browsers to only connect via HTTPS for the next 1 year.
+  # Only enable this if your site is fully on HTTPS — it cannot be undone easily.
+  Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+
   # ── Clickjacking protection ────────────────────────────────────────────────
   Header always set X-Frame-Options "SAMEORIGIN"
 
