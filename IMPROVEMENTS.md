@@ -178,3 +178,11 @@
     - When a fetch land is activated in Phase 5 and retrieves a shock land, `doesLandEnterTapped` evaluates the shock using the battlefield state *before* the fetch resolved.
     - This means the land-count and subtype checks that govern shock/check/battle land conditions are slightly wrong for the turn the fetch fires.
     - Fix: call `doesLandEnterTapped` after splicing the fetch out of the battlefield but before pushing the fetched land, so the snapshot accurately reflects the post-fetch board state.
+
+
+Lands Logic:
+
+Thriving Lands should choose a color of the key card as second --------DONE
+Filter Lands need land to activate --------DONE
+Filter Lands --------DONE
+verge lands --------DONE

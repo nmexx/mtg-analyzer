@@ -27,6 +27,8 @@ const LAND_DATA = (() => {
           sim_flags: flags,
           color_identity: land.color_identity || [],
           types: land.types || land.reveals || [],
+          primary: land.primary || null,
+          secondary_check: land.secondary_check || null,
         });
       }
     }
@@ -73,6 +75,7 @@ export const UTILITY_LANDS_UNTAPPED = new Set(landNamesWithFlag('isUtilityUntapp
 export const ODYSSEY_FILTER_LANDS = new Set(landNamesWithFlag('isOdysseyFilter'));
 export const CONDITIONAL_LIFE_LANDS = new Set(landNamesWithFlag('isConditionalLife'));
 export const BATTLE_LANDS = new Set(landNamesWithFlag('isBattleLand'));
+export const SLOW_LANDS = new Set(landNamesWithFlag('isSlowLand'));
 export const PATHWAY_LANDS = new Set(landNamesWithFlag('isPathway'));
 
 // ── Scaling / dynamic-mana land sets ────────────────────────────────────────
@@ -88,6 +91,9 @@ export const HIDEAWAY_LANDS = new Set([
 ]);
 
 export const SPECIAL_LANDS = new Set(landNamesInCycle('Special Lands'));
+export const THRIVING_LANDS = new Set(landNamesWithFlag('isThriving'));
+export const VERGE_LANDS = new Set(landNamesWithFlag('isVerge'));
+export const MDFC_LANDS = new Set(landNamesWithFlag('isMDFCLand'));
 
 export { LAND_DATA, FETCH_LAND_DATA };
 export default LAND_DATA;

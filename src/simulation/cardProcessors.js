@@ -29,12 +29,17 @@ import LAND_DATA, {
   HIDEAWAY_LANDS,
   CONDITIONAL_LIFE_LANDS,
   BATTLE_LANDS,
+  SLOW_LANDS,
   PATHWAY_LANDS,
   SCALES_WITH_SWAMPS_LANDS,
   SCALES_WITH_BASIC_SWAMPS_LANDS,
   SIMPLIFIED_MANA_LANDS,
   PHYREXIAN_TOWER_LANDS,
   TEMPLE_FALSE_GOD_LANDS,
+  THRIVING_LANDS,
+  VERGE_LANDS,
+  HORIZON_LANDS,
+  MDFC_LANDS,
 } from './landData.js';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -155,6 +160,7 @@ export const processLand = (data, face, _isMDFC) => {
   let isCheck = false;
   let isFast = false;
   let isBattleLand = false;
+  let isSlowLand = false;
   let isPathway = false;
 
   if (isFetch) {
@@ -273,6 +279,8 @@ export const processLand = (data, face, _isMDFC) => {
     entersTappedAlways = true;
   } else if (BATTLE_LANDS.has(name)) {
     isBattleLand = true;
+  } else if (SLOW_LANDS.has(name)) {
+    isSlowLand = true;
   } else if (PATHWAY_LANDS.has(name)) {
     isPathway = true;
   } else if (REVEAL_LANDS.has(name)) {
@@ -288,6 +296,8 @@ export const processLand = (data, face, _isMDFC) => {
     entersTappedAlways = false;
   } else if (FILTER_LANDS.has(name)) {
     entersTappedAlways = false;
+  } else if (HORIZON_LANDS.has(name)) {
+    entersTappedAlways = false;
   } else if (MAN_LANDS.has(name)) {
     entersTappedAlways = true;
   } else if (STORAGE_LANDS.has(name)) {
@@ -298,6 +308,8 @@ export const processLand = (data, face, _isMDFC) => {
     entersTappedAlways = false;
   } else if (ODYSSEY_FILTER_LANDS.has(name)) {
     entersTappedAlways = false;
+  } else if (MDFC_LANDS.has(name)) {
+    entersTappedAlways = false; // doesLandEnterTapped + playLand handle ETB dynamically (pay 3 life)
   } else {
     const hasEntersTappedText =
       oracleText.toLowerCase().includes('enters the battlefield tapped') ||
@@ -322,6 +334,14 @@ export const processLand = (data, face, _isMDFC) => {
   const checkTypes = ldEntry?.types ?? [];
   const cycleName = ldEntry?.cycleName ?? null;
   const isRoadLand = !!ldEntry?.sim_flags?.isRoadLand;
+  const isFilterLand = FILTER_LANDS.has(name); // Shadowmoor — {A}/{B} activation
+  const isOdysseyFilterLand = ODYSSEY_FILTER_LANDS.has(name); // Odyssey/Fallout — {1} activation
+  const isHorizonLand = HORIZON_LANDS.has(name);
+  const isMDFCLand = MDFC_LANDS.has(name); // Pay 3 life or enter tapped; untapped turns 1–4
+  const isThriving = THRIVING_LANDS.has(name);
+  const isVerge = VERGE_LANDS.has(name);
+  const vergePrimary = isVerge ? (ldEntry?.primary ?? null) : null;
+  const vergeSecondaryCheck = isVerge ? (ldEntry?.secondary_check ?? null) : null;
 
   return {
     name: data.name,
@@ -350,6 +370,7 @@ export const processLand = (data, face, _isMDFC) => {
     isCheck,
     isFast,
     isBattleLand,
+    isSlowLand,
     isPathway,
     isAncientTomb,
     isCityOfTraitors,
@@ -359,6 +380,14 @@ export const processLand = (data, face, _isMDFC) => {
     checkTypes,
     cycleName,
     isRoadLand,
+    isFilterLand,
+    isOdysseyFilterLand,
+    isHorizonLand,
+    isMDFCLand,
+    isThriving,
+    isVerge,
+    vergePrimary,
+    vergeSecondaryCheck,
     lifeloss: ldEntry?.sim_flags?.lifeloss ?? 0,
     // ── Scaling mana flags ────────────────────────────────────────────────────
     scalesWithSwamps: SCALES_WITH_SWAMPS_LANDS.has(name),
