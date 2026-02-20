@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import LZString from 'lz-string';
 
 // ─── Simulation & Parsing ─────────────────────────────────────────────────────
 import { monteCarlo } from './simulation/monteCarlo.js';
@@ -56,6 +57,38 @@ const getSaved = () => {
 };
 
 // =============================================================================
+// Shareable URL — encode / decode the full app state via the URL hash
+// =============================================================================
+
+/** Compress a plain JS object into a URL-safe hash string. */
+const encodeStateToHash = obj => LZString.compressToEncodedURIComponent(JSON.stringify(obj));
+
+/** Read + decompress the current URL hash; returns null when absent/invalid. */
+const decodeHashToState = () => {
+  try {
+    const hash = window.location.hash.slice(1);
+    if (!hash) return null;
+    const json = LZString.decompressFromEncodedURIComponent(hash);
+    if (!json) return null;
+    return JSON.parse(json);
+  } catch {
+    return null;
+  }
+};
+
+/**
+ * Resolved once at module evaluation time so that every useState initialiser
+ * can consume it directly without extra effects.
+ */
+const _urlState = decodeHashToState();
+
+// Remove the hash from the address bar immediately so that subsequent
+// localStorage saves are not confused by a stale hash.
+if (_urlState) {
+  history.replaceState(null, '', window.location.pathname + window.location.search);
+}
+
+// =============================================================================
 // Deck slot — all per-deck mutable state in one object
 // =============================================================================
 const defaultDeckSlot = (saved = {}) => ({
@@ -104,8 +137,8 @@ const hasCastables = deck =>
 
 // =============================================================================
 const MTGMonteCarloAnalyzer = () => {
-  // Read persisted state exactly once — subsequent useState calls close over _s
-  const [_s] = useState(getSaved);
+  // URL hash state takes priority over localStorage, read once at startup.
+  const [_s] = useState(() => _urlState ?? getSaved());
   // ── Data source ────────────────────────────────────────────────────────────
   const [apiMode, setApiMode] = useState(() => _s.apiMode ?? 'local');
   const [cardsDatabase, setCardsDatabase] = useState(null);
@@ -233,6 +266,40 @@ const MTGMonteCarloAnalyzer = () => {
   const [screwTurn, setScrewTurn] = useState(() => _s.screwTurn ?? 3);
 
   const [isSimulating, setIsSimulating] = useState(false);
+
+  // ── Share URL ──────────────────────────────────────────────────────────────
+  const [shareCopied, setShareCopied] = useState(false);
+
+  const handleShareUrl = () => {
+    const payload = {
+      apiMode,
+      comparisonMode,
+      labelA,
+      labelB,
+      slotA: serializeDeckSlot(deckSlotA),
+      slotB: serializeDeckSlot(deckSlotB),
+      iterations,
+      turns,
+      handSize,
+      maxSequences,
+      selectedTurnForSequences,
+      commanderMode,
+      enableMulligans,
+      mulliganRule,
+      mulliganStrategy,
+      customMulliganRules,
+      floodNLands,
+      floodTurn,
+      screwNLands,
+      screwTurn,
+    };
+    const hash = encodeStateToHash(payload);
+    const url = `${window.location.origin}${window.location.pathname}#${hash}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setShareCopied(true);
+      setTimeout(() => setShareCopied(false), 2500);
+    });
+  };
 
   // ── Derived chart data ─────────────────────────────────────────────────────
   const chartData = useMemo(
@@ -622,8 +689,17 @@ const MTGMonteCarloAnalyzer = () => {
     <div className="app-root">
       {/* Header */}
       <div className="app-header">
-        <h1>🎲 MTG Monte Carlo Deck Analyzer</h1>
-        <p>Simulation-based deck analysis for Magic: The Gathering</p>
+        <div className="app-header__titles">
+          <h1>🎲 MTG Monte Carlo Deck Analyzer</h1>
+          <p>Simulation-based deck analysis for Magic: The Gathering</p>
+        </div>
+        <button
+          className={`btn-share${shareCopied ? ' btn-share--copied' : ''}`}
+          onClick={handleShareUrl}
+          title="Copy a shareable link to this exact configuration"
+        >
+          {shareCopied ? '✓ Copied!' : '🔗 Share'}
+        </button>
       </div>
 
       {/* Data Source */}

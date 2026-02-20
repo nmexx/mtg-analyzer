@@ -116,9 +116,7 @@
 
 ## New — UX
 
-21. **Shareable URL** `[Medium]`
-    - Encode deck text + all simulation settings into the URL hash using `LZ-string` compression or `btoa`.
-    - Anyone clicking the link gets an identical pre-filled simulation — zero backend required.
+21. **Shareable URL** --------DONE
 
 22. **Named simulation presets** `[Medium]`
     - Extend LocalStorage persistence (item 9) to allow saving and loading named configs.
