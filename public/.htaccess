@@ -1,0 +1,63 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# HTTP Security Headers — MTG Analyzer (static SPA)
+#
+# Placed in public/ so Vite copies it to dist/ on every build, and the
+# deploy script uploads it automatically.
+#
+# Requires mod_headers (enabled on virtually all Apache shared hosts).
+# ─────────────────────────────────────────────────────────────────────────────
+
+<IfModule mod_headers.c>
+
+  # ── Clickjacking protection ────────────────────────────────────────────────
+  Header always set X-Frame-Options "SAMEORIGIN"
+
+  # ── MIME-type sniffing protection ──────────────────────────────────────────
+  Header always set X-Content-Type-Options "nosniff"
+
+  # ── Referrer policy ───────────────────────────────────────────────────────
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+
+  # ── Disable browser features not used by this app ─────────────────────────
+  Header always set Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
+
+  # ── Content Security Policy ───────────────────────────────────────────────
+  #
+  # Sources used by this app:
+  #   script-src  'self'                    – all JS is bundled by Vite
+  #   style-src   'self' 'unsafe-inline'    – React inline style={} props
+  #   img-src     'self' data:              – local assets + data URIs
+  #               https://api.scryfall.com  – CardTooltip card images
+  #   connect-src 'self'                    – same-origin requests
+  #               https://api.scryfall.com  – optional Scryfall API fallback
+  #   font-src    'self'                    – local fonts only
+  #   object-src  'none'                    – no Flash / plugins
+  #   frame-ancestors 'none'               – stricter than X-Frame-Options
+  #   base-uri    'self'                    – prevent <base> tag injection
+  #   form-action 'self'                    – no off-site form submissions
+  #
+  Header always set Content-Security-Policy "\
+default-src 'self'; \
+script-src 'self'; \
+style-src 'self' 'unsafe-inline'; \
+img-src 'self' data: https://api.scryfall.com; \
+connect-src 'self' https://api.scryfall.com; \
+font-src 'self'; \
+object-src 'none'; \
+frame-ancestors 'none'; \
+base-uri 'self'; \
+form-action 'self';"
+
+</IfModule>
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SPA routing — serve index.html for all routes (no 404 on deep-links)
+# ─────────────────────────────────────────────────────────────────────────────
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule ^ index.html [L]
+</IfModule>
