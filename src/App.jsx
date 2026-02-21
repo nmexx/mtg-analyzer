@@ -28,19 +28,7 @@ import ComparisonResultsPanel from './components/ComparisonResultsPanel.jsx';
 import DeckStatisticsPanel from './components/DeckStatisticsPanel.jsx';
 import ComparisonRow from './components/ComparisonRow.jsx';
 
-// ─── html2canvas (lazy CDN loader) ────────────────────────────────────────────
-const loadHtml2Canvas = () =>
-  new Promise((resolve, reject) => {
-    if (window.html2canvas) {
-      resolve(window.html2canvas);
-      return;
-    }
-    const script = document.createElement('script');
-    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
-    script.onload = () => resolve(window.html2canvas);
-    script.onerror = reject;
-    document.head.appendChild(script);
-  });
+import html2canvas from 'html2canvas';
 
 // =============================================================================
 // localStorage persistence helpers
@@ -581,33 +569,47 @@ const MTGMonteCarloAnalyzer = () => {
   };
 
   // ============================================================================
-  // Export results as PNG (uses html2canvas CDN)
+  // Export results as PNG
   // ============================================================================
   const exportResultsAsPNG = async event => {
     if (!simulationResults) return;
+    const button = event?.target;
+    const originalText = button?.textContent;
     try {
-      const html2canvas = await loadHtml2Canvas();
       const resultsSection = document.getElementById('results-section');
       if (!resultsSection) {
         alert('Results section not found');
         return;
       }
 
-      const button = event.target;
-      const originalText = button.textContent;
-      button.textContent = '📸 Capturing...';
-      button.disabled = true;
+      if (button) {
+        button.textContent = '📸 Capturing...';
+        button.disabled = true;
+      }
 
-      await new Promise(r => setTimeout(r, 500));
+      // Read background colour from the live CSS variable so dark-mode
+      // screenshots use the correct dark background.
+      const bgColor =
+        getComputedStyle(document.documentElement).getPropertyValue('--clr-bg').trim() || '#f9fafb';
+
+      await new Promise(r => setTimeout(r, 300));
 
       const canvas = await html2canvas(resultsSection, {
-        backgroundColor: '#f9fafb',
+        backgroundColor: bgColor,
         scale: 2,
         logging: false,
         useCORS: true,
       });
 
       canvas.toBlob(blob => {
+        if (!blob) {
+          alert('Failed to generate image. Please use your browser screenshot tool.');
+          if (button) {
+            button.textContent = originalText;
+            button.disabled = false;
+          }
+          return;
+        }
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -616,8 +618,10 @@ const MTGMonteCarloAnalyzer = () => {
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-        button.textContent = originalText;
-        button.disabled = false;
+        if (button) {
+          button.textContent = originalText;
+          button.disabled = false;
+        }
       });
     } catch (err) {
       console.error('Export error:', err);
@@ -625,7 +629,10 @@ const MTGMonteCarloAnalyzer = () => {
         'Failed to export. Please use your browser screenshot tool ' +
           '(Ctrl+Shift+S on Windows, Cmd+Shift+5 on Mac)'
       );
-      if (event?.target) event.target.disabled = false;
+      if (button) {
+        button.textContent = originalText;
+        button.disabled = false;
+      }
     }
   };
 
