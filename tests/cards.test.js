@@ -1,7 +1,7 @@
 /**
- * Card Archive — Unit Tests
+ * Card Data — Unit Tests
  *
- * Covers all six Card_Archive data files:
+ * Covers all six card_data files:
  *   Mana_Dorks.js         → MANA_DORK_DATA
  *   Artifacts.js          → ARTIFACT_DATA
  *   Ramp_Spells.js        → RAMP_SPELL_DATA
@@ -15,18 +15,18 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { MANA_DORK_DATA } from '../Card_Archive/Mana_Dorks.js';
+import { MANA_DORK_DATA } from '../card_data/Mana_Dorks.js';
 import {
   ARTIFACT_DATA,
   SIMPLIFY_MOX_CONDITIONS,
   MOX_PRIORITY_ARTIFACTS,
   BURST_MANA_SOURCES,
-} from '../Card_Archive/Artifacts.js';
-import { RAMP_SPELL_DATA } from '../Card_Archive/Ramp_Spells.js';
-import { FETCH_LAND_DATA } from '../Card_Archive/Fetch_Lands.js';
-import { RITUAL_DATA } from '../Card_Archive/Rituals.js';
-import { EXPLORATION_EFFECTS } from '../Card_Archive/Exploration_Effects.js';
-import LANDS_JSON from '../Card_Archive/Lands.js';
+} from '../card_data/Artifacts.js';
+import { RAMP_SPELL_DATA } from '../card_data/Ramp_Spells.js';
+import { FETCH_LAND_DATA } from '../card_data/Fetch_Lands.js';
+import { RITUAL_DATA } from '../card_data/Rituals.js';
+import { EXPLORATION_EFFECTS } from '../card_data/Exploration_Effects.js';
+import LANDS_JSON from '../card_data/Lands.js';
 
 const VALID_COLORS = new Set(['W', 'U', 'B', 'R', 'G', 'C']);
 const VALID_FETCH_TYPES = new Set([

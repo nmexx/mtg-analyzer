@@ -1,10 +1,19 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="MTG Monte Carlo mana base analyzer — simulate land drops, mana availability, and key card playability." />
+    <meta
+      name="description"
+      content="MTG Monte Carlo mana base analyzer — simulate land drops, mana availability, and key card playability."
+    />
     <title>MTG Monte Carlo Deck Analyzer v%APP_VERSION%</title>
+    <script>
+      document.documentElement.setAttribute(
+        'data-theme',
+        localStorage.getItem('mtg_mca_theme') ?? 'dark'
+      );
+    </script>
   </head>
   <body>
     <div id="root"></div>

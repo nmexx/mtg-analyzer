@@ -62,6 +62,7 @@ Tests are written with [Vitest](https://vitest.dev/) and cover the simulation en
 | Build tool | Vite 5 + `@vitejs/plugin-react` |
 | Charts | Recharts 2 |
 | PNG export | html2canvas |
+| URL compression | lz-string |
 | Testing | Vitest |
 | Card data | Scryfall API / local JSON |
 
@@ -76,17 +77,26 @@ Tests are written with [Vitest](https://vitest.dev/) and cover the simulation en
 - Surfaces parse errors inline without blocking the rest of the UI
 
 ### Card Data Source
-- **Local JSON mode** — load a Scryfall Default Cards JSON file (up to 1 GB) for fully offline lookups
+- **Local JSON mode** — load a Scryfall Default Cards JSON file (up to ~300 MB) for fully offline lookups
 - **Scryfall API fallback** — live card lookups when no local file is loaded
 - Cards are cached in a lookup map so each name is only fetched once per session
+- **API rate limiting** — soft warning at 60 Scryfall calls per session; hard block at 150 to respect API usage limits
 
 ### Land Detection & Display
-- Detects and labels basic lands, shock lands, fetch lands, fast lands, check lands, battle lands, bounce lands, and crowd lands
-- Shows mana production colors and fetch target types as badges on each land row
+- Detects and labels every major land cycle: basics, shock lands, fetch lands, fast lands, slow lands, battle lands, check lands, bounce lands, crowd lands, filter lands, pain lands, MDFC lands, Verge lands, Horizon lands, and more
+- Shows mana production colours and fetch target types as badges on each land row
 - Hover any card name to see a **Scryfall card image tooltip**
 
+### Deck Statistics Panel
+After parsing, a statistics panel breaks down the deck across multiple dimensions:
+- **Land analysis** — counts of always-untapped, always-tapped, conditional, and fetch lands
+- **Average CMC** of non-land spells
+- **Ramp & acceleration count** and percentage of deck
+- **Mana source breakdown** — bar chart of sources by category (lands, artifacts, creatures, ramp, rituals, exploration)
+- **Colour identity** — pip-frequency analysis across all non-land cards
+
 ### Toggleable Card Categories
-Each mana-producing category can be enabled/disabled wholesale or individually per card:
+Each mana-producing category can be enabled/disabled wholesale or per-card:
 - **Mana Artifacts** (Sol Ring, Arcane Signet, etc.)
 - **Mana Creatures** (Birds of Paradise, Llanowar Elves, etc.)
 - **Exploration Effects** (Exploration, Azusa, Oracle of Mul Daya, etc.)
@@ -94,44 +104,85 @@ Each mana-producing category can be enabled/disabled wholesale or individually p
 - **Rituals** (Dark Ritual, Cabal Ritual, etc.)
 
 ### Key Card Selection
-- Mark any non-land spell as a **key card** to track its playability over time
-- The simulation records the turn-by-turn probability that each key card can be cast
+- Mark any non-land spell as a **key card** to track its castability turn by turn
+- Per-turn castability is computed in two modes:
+  - **Regular** — mana from permanents on the battlefield only
+  - **Burst** — regular mana plus any ritual or Mox-style artifact still in hand
+- **On-curve playability** — a single headline percentage for each key card: how often it can be cast on the turn equal to its CMC
 
 ### Simulation Engine
-- Configurable **iteration count** (default 10,000; higher for tighter confidence intervals)
-- Configurable **number of turns** to simulate (default 7)
+- Configurable **iteration count** (default 10,000; range 1,000–100,000)
+- Configurable **number of turns** to simulate (default 7; up to 15)
 - Configurable **opening hand size** (default 7)
 - Configurable **maximum play sequences** to record per turn for the sequence explorer
-- **Commander Mode** — switches to a 100-card singleton ruleset and adjusts crowd-land logic for a multiplayer environment
-- Fetch land searching is modeled with color-awareness
-- Bounce lands, shock lands, fast lands, check lands, battle lands, and crowd lands all have dedicated enter-tapped logic
+- **Commander Mode** — switches to a 100-card singleton ruleset; draws on turn 1; enables crowd-land untapped logic for multiplayer
+- Full per-turn statistics with **standard deviations** for every numeric output
+- Bipartite colour-pip matching ensures a card's specific colour requirements are verified against distinct mana sources — not just total mana
+
+### Flood & Screw Tracking
+- **Mana flood rate** — percentage of games where the battlefield has ≥ N lands by turn T
+- **Mana screw rate** — percentage of games where the battlefield has ≤ N lands by turn T
+- Both thresholds (N lands, turn T) are fully configurable per simulation run
 
 ### Mulligan Logic
 - Optional mulligan simulation with two supported rule sets:
-  - **London Mulligan** — draw 7, put back N cards
-  - **Vancouver Mulligan** — draw 6/5/…, scry 1 on a kept hand
-- Configurable **mulligan strategy**: Aggressive, Balanced, or Conservative
-- **Custom mulligan rules** — set per-turn thresholds for minimum lands and maximum lands required to keep a hand
+  - **London Mulligan** — draw 7, put back N cards (bottom decisions are optimised for land count). In **Commander mode** the first mulligan is free — you draw 7 fresh cards without bottoming any (N=0).
+  - **Vancouver Mulligan** — draw 6/5/… cards directly. In **Commander mode** the first redraw is still 7 cards.
+- Configurable **mulligan strategy**:
+  - **Conservative** — only mull zero-land or seven-land hands
+  - **Balanced** — mull hands with < 2 or > 5 lands unless a cheap spell is present
+  - **Aggressive** — mull any hand outside 2–4 lands
+  - **Custom** — set explicit min/max land thresholds and an "early plays" requirement
 
 ### Results & Charts
 All charts are interactive Recharts line graphs rendered per turn:
-- **Lands in play** — average lands on battlefield each turn
+- **Lands in play** — average total and untapped lands on the battlefield each turn (with standard deviation band)
 - **Available mana** — average total mana (lands + ramp) each turn
-- **Life loss from shock/pain lands** — average cumulative life paid
-- **Key card playability** — per-card probability (%) of being castable by each turn
+- **Per-colour mana** — average availability of each of the five colours per turn
+- **Life loss** — average cumulative life paid from shock lands, fetch lands, pain lands, Horizon lands, MDFC lands, Ancient Tomb, Mana Vault, and Mana Crypt
+- **Key card playability** — per-card probability (%) of being castable each turn (regular and burst overlays)
 
 Summary statistics displayed alongside charts:
-- Total iterations run
-- Hands kept (after mulligans)
-- Mulligan rate (when mulligan logic is enabled)
+- Total iterations run, hands kept, mulligan rate
+- Flood rate and screw rate at the configured thresholds
+- On-curve playability percentage per key card
+
+### Comparison Mode
+Switch to **Compare Two Decks** mode to run both decks through the same simulation settings simultaneously:
+- Side-by-side deck input panels with customisable Deck A / Deck B labels
+- All card-category panels rendered in two-column layout via `ComparisonRow`
+- **Overlay charts** in `ComparisonResultsPanel` plot both decks on shared axes (solid = Deck A, dashed = Deck B):
+  - Lands per turn, untapped lands per turn
+  - Total mana per turn
+  - Cumulative life loss
+  - Key card playability (each deck's key cards can differ)
+- **Delta summary** — final-turn difference in lands, mana, and life loss between the two decks
 
 ### Play Sequence Explorer
-- Select any turn and see the most common card sequences that led to that turn's mana state
-- Helps identify which mana sources matter most in practice
+- Select any turn to see the most common card sequence that led to that state
+- Full turn-by-turn action log: draws, land plays, ramp casts, fetch activations, spell casts
+- Separate sequences captured for regular-mana and burst-mana playability
+
+### Shareable URLs
+- The complete app state (deck lists, settings, key cards, comparison mode) is compressed with **LZ-String** and encoded into the URL hash
+- Share a link to let someone else load your exact configuration instantly
+- State falls back to `localStorage` when no hash is present
+
+### Persistence
+- All settings (deck text, simulation config, mulligan rules, flood/screw thresholds, comparison mode) are automatically saved to `localStorage`
+- State is restored on page reload with no manual action required
 
 ### Export
 - **PNG export** — captures the full results section as a PNG image via html2canvas
-- **CSV export** — downloads a spreadsheet of per-turn averages (lands, mana, life loss, key card playability) for further analysis in Excel or similar tools
+- **CSV export** — downloads a spreadsheet of per-turn averages (lands, mana, life loss, per-colour mana, key card playability) for further analysis; in comparison mode both decks are merged into a single file with labelled columns
+
+### Theme
+- **Dark / Light mode toggle** in the toolbar; preference is saved to `localStorage`
+- Theme is applied before first paint to avoid flash of unstyled content
+
+### Tutorial Page
+- `tutorial.html` — a standalone "How It Works" page explaining the Monte Carlo method, all core assumptions, land cycle behaviour, mulligan logic, key-card playability, and flood/screw tracking
+- Linked from the main app toolbar; uses the same CSS theme as the main app
 
 ---
 
@@ -139,30 +190,45 @@ Summary statistics displayed alongside charts:
 
 ```
 src/
-  App.jsx                   Main application shell and state
-  components/               UI panel components
-    ArtifactsPanel.jsx
-    CardTooltip.jsx         Scryfall image hover tooltip
-    CreaturesPanel.jsx
-    ExplorationPanel.jsx
-    LandsPanel.jsx
-    RampSpellsPanel.jsx
-    ResultsPanel.jsx        Charts and export buttons
-    RitualsPanel.jsx
-    SimulationSettingsPanel.jsx
-    SpellsPanel.jsx
+  App.jsx                       Main application shell and state
+  index.css                     Global styles and theme variables
+  components/
+    ArtifactsPanel.jsx          Mana-artifact toggle panel
+    CardTooltip.jsx             Scryfall image hover tooltip
+    ComparisonResultsPanel.jsx  Overlay charts for A/B comparison mode
+    ComparisonRow.jsx           Two-column comparison layout primitive
+    CreaturesPanel.jsx          Mana-creature toggle panel
+    DeckStatisticsPanel.jsx     Post-parse stats: CMC, land breakdown, colour identity
+    ExplorationPanel.jsx        Exploration-effect toggle panel
+    LandsPanel.jsx              Land display with colour/fetch badges
+    RampSpellsPanel.jsx         Ramp-spell toggle panel
+    ResultsPanel.jsx            Single-deck charts and export buttons
+    RitualsPanel.jsx            Ritual toggle panel
+    SimulationSettingsPanel.jsx Iteration count, turns, mulligan, flood/screw settings
+    SpellsPanel.jsx             Key-card selector for non-land spells
   parser/
-    deckParser.js           MTG Arena format parser
+    deckParser.js               MTG Arena format parser
   simulation/
-    cardProcessors.js       Card classification and property extraction
-    landData.js             Known land sets (fetches, shocks, etc.)
-    monteCarlo.js           Core simulation loop
-    simulationCore.js       Hand/turn evaluation helpers
+    cardProcessors.js           Card classification and property extraction
+    landData.js                 Known land sets (fetches, shocks, etc.)
+    monteCarlo.js               Core simulation loop
+    simulationCore.js           Hand/turn evaluation helpers
   utils/
-    math.js                 Statistical helpers
-    uiHelpers.jsx           Mana symbol rendering, chart data prep
-Card_Archive/               Curated card lists for classification
-tests/                      Vitest unit tests
+    math.js                     Statistical helpers
+    uiHelpers.jsx               Mana symbol rendering, chart data prep
+card_data/                      Curated card data files for simulation classification
+  Artifacts.js
+  Exploration_Effects.js
+  Fetch_Lands.js
+  Lands.js
+  Mana_Dorks.js
+  Ramp_Spells.js
+  Rituals.js
+tests/                          Vitest unit tests
+tutorial.html                   Standalone "How It Works" documentation page
+documentation/
+  land_behaviour.md             Developer reference — land cycle ETB logic and assumptions
+  IMPROVEMENTS.md               Planned and completed improvements backlog
 ```
 
 ---
@@ -170,3 +236,4 @@ tests/                      Vitest unit tests
 ## License
 
 Card names, mana symbols, and card data © Wizards of the Coast. This tool is fan-made and not affiliated with or endorsed by Wizards of the Coast.
+

@@ -15,7 +15,7 @@ export const EXPLORATION_EFFECTS = new Set([
   'manabond',
 
   // Creatures
-  'burgeoning',              // technically an enchantment but behaves like exploration
+  'burgeoning', // technically an enchantment but behaves like exploration
   'azusa, lost but seeking',
   'oracle of mul daya',
   'mina and denn, wildborn',

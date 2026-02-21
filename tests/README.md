@@ -10,16 +10,16 @@ npm test
 npm run test:watch
 ```
 
-**Framework:** [Vitest](https://vitest.dev/)  
+**Framework:** [Vitest](https://vitest.dev/)
 **Test files:** 8 files · **423 tests** total (as of Feb 2026)
 
 ---
 
 ## Test files
 
-### `cards.test.js` — Card Archive data integrity (76 tests)
+### `cards.test.js` — Card data integrity (76 tests)
 
-Validates the six data files in `Card_Archive/` that feed the simulation engine.
+Validates the six data files in `card_data/` that feed the simulation engine.
 
 | Describe block | What is checked |
 |---|---|

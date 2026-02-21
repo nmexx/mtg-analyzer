@@ -579,6 +579,83 @@ describe('monteCarlo — commanderMode', () => {
     // By turn 2 (index 1) commander mode gains an extra card on turn 1, so lands ≥ non-cmd
     expect(cmd.landsPerTurn[1]).toBeGreaterThanOrEqual(base.landsPerTurn[1] - 0.05);
   });
+
+  // ── Free first mulligan (Commander rule) ──────────────────────────────────
+
+  it('commander + London mulligan: first mulligan is free (mulligans tracked, no error)', () => {
+    // Aggressive strategy on a 40-land deck will force mulligans.
+    // The free first mulligan means the first redraw still yields 7 cards.
+    expect(() =>
+      monteCarlo(monoGreenDecks(), {
+        iterations: 200,
+        turns: 3,
+        commanderMode: true,
+        enableMulligans: true,
+        mulliganRule: 'london',
+        mulliganStrategy: 'aggressive',
+      })
+    ).not.toThrow();
+  });
+
+  it('commander + London mulligan: handsKept still equals iterations after free mulligan', () => {
+    const result = monteCarlo(monoGreenDecks(), {
+      iterations: 200,
+      turns: 3,
+      commanderMode: true,
+      enableMulligans: true,
+      mulliganRule: 'london',
+      mulliganStrategy: 'aggressive',
+    });
+    expect(result.handsKept).toBe(200);
+  });
+
+  it('commander free mulligan: avg land count on turn 1 is >= same config without commander', () => {
+    // Because commander gets a free 7-card redraw, consistency should be at least equal
+    const baseResult = monteCarlo(monoGreenDecks(), {
+      iterations: 500,
+      turns: 3,
+      commanderMode: false,
+      enableMulligans: true,
+      mulliganRule: 'london',
+      mulliganStrategy: 'aggressive',
+    });
+    const cmdResult = monteCarlo(monoGreenDecks(), {
+      iterations: 500,
+      turns: 3,
+      commanderMode: true,
+      enableMulligans: true,
+      mulliganRule: 'london',
+      mulliganStrategy: 'aggressive',
+    });
+    // Commander free mulligan keeps 7 cards on first mull vs 6 — should not be worse
+    expect(cmdResult.landsPerTurn[0]).toBeGreaterThanOrEqual(baseResult.landsPerTurn[0] - 0.1);
+  });
+
+  it('commander + Vancouver mulligan: first mulligan redraws 7 cards (no error)', () => {
+    expect(() =>
+      monteCarlo(monoGreenDecks(), {
+        iterations: 200,
+        turns: 3,
+        commanderMode: true,
+        enableMulligans: true,
+        mulliganRule: 'vancouver',
+        mulliganStrategy: 'aggressive',
+      })
+    ).not.toThrow();
+  });
+
+  it('commander free mulligan mulligans counter is still incremented', () => {
+    // mulligans counter tracks draws taken, not cards bottomed — should still be > 0
+    const result = monteCarlo(monoGreenDecks(), {
+      iterations: 200,
+      turns: 3,
+      commanderMode: true,
+      enableMulligans: true,
+      mulliganRule: 'london',
+      mulliganStrategy: 'aggressive',
+    });
+    expect(result.mulligans).toBeGreaterThan(0);
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────

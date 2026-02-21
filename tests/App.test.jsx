@@ -84,12 +84,12 @@ describe('Initial render', () => {
 
   it('displays the app title', () => {
     render(<MTGMonteCarloAnalyzer />);
-    expect(screen.getByText(/MTG Monte Carlo Deck Analyzer/i)).toBeInTheDocument();
+    expect(screen.getByText(/Commandertables/i)).toBeInTheDocument();
   });
 
   it('displays the subtitle', () => {
     render(<MTGMonteCarloAnalyzer />);
-    expect(screen.getByText(/Simulation-based deck analysis/i)).toBeInTheDocument();
+    expect(screen.getByText(/Monte Carlo mana-base analyzer/i)).toBeInTheDocument();
   });
 
   it('renders the Data Source panel heading', () => {

@@ -116,12 +116,13 @@ const SimulationSettingsPanel = ({
           checked={commanderMode}
           onChange={e => setCommanderMode(e.target.checked)}
         />
-        <span>🎩 Commander Mode (100-card singleton, optimized for multiplayer)</span>
+        <span>🎩 Commander Mode (100-card singleton, optimised for multiplayer)</span>
       </label>
       {commanderMode && (
         <div className="commander-hint">
           Assumes multiplayer environment: Crowd lands enter untapped, longer game simulation
-          recommended
+          recommended. The first mulligan is free — you redraw 7 cards without bottoming any
+          (official Commander rule).
         </div>
       )}
     </div>
@@ -326,9 +327,11 @@ const SimulationSettingsPanel = ({
       </div>
     </div>
 
-    <button onClick={runSimulation} disabled={isSimulating} className="btn-run">
-      {isSimulating ? '⏳ Simulating...' : '🎲 Start Simulation'}
-    </button>
+    <div className="btn-run-sticky">
+      <button onClick={runSimulation} disabled={isSimulating} className="btn-run">
+        {isSimulating ? '⏳ Simulating...' : '🎲 Start Simulation'}
+      </button>
+    </div>
   </div>
 );
 

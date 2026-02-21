@@ -12,6 +12,6 @@
     "allowSyntheticDefaultImports": true,
     "resolveJsonModule": true
   },
-  "include": ["src/**/*", "Card_Archive/**/*", "tests/**/*"],
+  "include": ["src/**/*", "card_data/**/*", "tests/**/*"],
   "exclude": ["node_modules", "dist", "coverage"]
 }

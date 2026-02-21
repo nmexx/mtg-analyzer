@@ -15,7 +15,7 @@ export default [
 
   // ── React + browser source files ────────────────────────────────────────
   {
-    files: ['src/**/*.{js,jsx}', 'Card_Archive/**/*.js'],
+    files: ['src/**/*.{js,jsx}', 'card_data/**/*.js'],
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: 'module',
@@ -37,8 +37,8 @@ export default [
     rules: {
       // React
       ...reactPlugin.configs.recommended.rules,
-      'react/react-in-jsx-scope': 'off',      // not needed with Vite/React 17+
-      'react/prop-types': 'off',              // project doesn't use PropTypes
+      'react/react-in-jsx-scope': 'off', // not needed with Vite/React 17+
+      'react/prop-types': 'off', // project doesn't use PropTypes
 
       // React Hooks
       ...reactHooks.configs.recommended.rules,

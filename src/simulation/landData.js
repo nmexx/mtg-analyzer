@@ -7,8 +7,8 @@
  * without having to thread them through React state.
  */
 
-import LANDS_JSON from '../../Card_Archive/Lands.js';
-import { FETCH_LAND_DATA } from '../../Card_Archive/Fetch_Lands.js';
+import LANDS_JSON from '../../card_data/Lands.js';
+import { FETCH_LAND_DATA } from '../../card_data/Fetch_Lands.js';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Primary land map  ·  keyed by lowercase name

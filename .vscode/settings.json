@@ -48,5 +48,9 @@
   },
 
   // ── Test explorer (Vitest) ────────────────────────────────────────────────
-  "vitest.include": ["tests/**/*.test.{js,jsx}"]
+  "vitest.include": ["tests/**/*.test.{js,jsx}"],
+  "vitest.autoRun": {
+    "onStartup": false,
+    "onSave": "none"
+  }
 }

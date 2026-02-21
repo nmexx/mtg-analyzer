@@ -32,7 +32,7 @@
  * }
  */
 
-import { ARTIFACT_DATA, BURST_MANA_SOURCES } from '../../Card_Archive/Artifacts.js';
+import { ARTIFACT_DATA, BURST_MANA_SOURCES } from '../../card_data/Artifacts.js';
 import {
   shuffle,
   selectBestLand,
@@ -250,6 +250,9 @@ export const monteCarlo = (deckToParse, config = {}) => {
         if (shouldMulligan) {
           mulliganCount++;
           results.mulligans++;
+          // In Commander mode the first mulligan is free: you redraw 7 without
+          // bottoming any card (official Commander rule).
+          const effectiveMullCount = Math.max(0, mulliganCount - (commanderMode ? 1 : 0));
           if (mulliganRule === 'london') {
             const newShuffle = shuffle(deck);
             const newHand = newShuffle.slice(0, 7);
@@ -264,11 +267,11 @@ export const monteCarlo = (deckToParse, config = {}) => {
               }
               return (b.cmc || 0) - (a.cmc || 0);
             });
-            hand = sortedHand.slice(mulliganCount);
+            hand = sortedHand.slice(effectiveMullCount);
             library = newShuffle.slice(7);
           } else {
             const newShuffle = shuffle(deck);
-            const newHandSize = 7 - mulliganCount;
+            const newHandSize = 7 - effectiveMullCount;
             hand = newShuffle.slice(0, newHandSize);
             library = newShuffle.slice(newHandSize);
           }

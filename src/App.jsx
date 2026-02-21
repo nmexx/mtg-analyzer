@@ -279,6 +279,16 @@ const MTGMonteCarloAnalyzer = () => {
 
   const [isSimulating, setIsSimulating] = useState(false);
 
+  // ── Dark / Light theme ────────────────────────────────────────────────────
+  const [theme, setTheme] = useState(() => localStorage.getItem('mtg_mca_theme') ?? 'dark');
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('mtg_mca_theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => setTheme(t => (t === 'dark' ? 'light' : 'dark'));
+
   // ── Share URL ──────────────────────────────────────────────────────────────
   const [shareCopied, setShareCopied] = useState(false);
 
@@ -708,19 +718,60 @@ const MTGMonteCarloAnalyzer = () => {
   // ============================================================================
   return (
     <div className="app-root">
+      {/* Simulating overlay */}
+      {isSimulating && (
+        <div className="sim-overlay">
+          <div className="sim-spinner" />
+          <div className="sim-overlay__text">Simulating…</div>
+          <div className="sim-overlay__sub">
+            {iterations.toLocaleString()} iterations &middot; please wait
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="app-header">
         <div className="app-header__titles">
-          <h1>🎲 MTG Monte Carlo Deck Analyzer</h1>
-          <p>Simulation-based deck analysis for Magic: The Gathering</p>
+          <h1>Commandertables</h1>
+          <p>Monte Carlo mana-base analyzer for Magic: The Gathering</p>
         </div>
-        <button
-          className={`btn-share${shareCopied ? ' btn-share--copied' : ''}`}
-          onClick={handleShareUrl}
-          title="Copy a shareable link to this exact configuration"
-        >
-          {shareCopied ? '✓ Copied!' : '🔗 Share'}
-        </button>
+      </div>
+
+      {/* Utility toolbar */}
+      <div className="app-toolbar">
+        <div className="app-toolbar__left">
+          <a
+            className="toolbar-btn toolbar-btn--yt"
+            href="https://www.youtube.com/@CommanderTables/videos"
+            target="_blank"
+            rel="noopener noreferrer"
+            title="CommanderTables on YouTube"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.6A3 3 0 0 0 .5 6.2 31.5 31.5 0 0 0 0 12a31.5 31.5 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.6 9.4.6 9.4.6s7.5 0 9.4-.6a3 3 0 0 0 2.1-2.1A31.5 31.5 0 0 0 24 12a31.5 31.5 0 0 0-.5-5.8zM9.75 15.5V8.5l6.25 3.5-6.25 3.5z" />
+            </svg>
+            Watch on YouTube
+          </a>
+          <a className="toolbar-btn" href="./tutorial.html" title="How the simulator works">
+            📖 Tutorial
+          </a>
+        </div>
+        <div className="app-toolbar__right">
+          <button
+            className="toolbar-btn"
+            onClick={toggleTheme}
+            title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+          >
+            {theme === 'dark' ? '☀️ Light' : '🌙 Dark'}
+          </button>
+          <button
+            className={`toolbar-btn${shareCopied ? ' toolbar-btn--copied' : ''}`}
+            onClick={handleShareUrl}
+            title="Copy a shareable link to this exact configuration"
+          >
+            {shareCopied ? '✓ Copied!' : '🔗 Share'}
+          </button>
+        </div>
       </div>
 
       {/* Data Source */}
@@ -856,76 +907,112 @@ const MTGMonteCarloAnalyzer = () => {
               <DeckStatisticsPanel parsedDeck={parsedDeck} />
 
               {/* Lands */}
-              <div className="panel-grid">
-                <LandsPanel
-                  parsedDeck={parsedDeck}
-                  getManaSymbol={getManaSymbol}
-                  getFetchSymbol={getFetchSymbol}
-                />
-              </div>
-
-              {parsedDeck.artifacts.length > 0 && (
+              <details className="section-details" open>
+                <summary className="section-summary">
+                  🗺️ Lands
+                  <span className="section-summary__chevron">▾</span>
+                </summary>
                 <div className="panel-grid">
-                  <ArtifactsPanel
+                  <LandsPanel
                     parsedDeck={parsedDeck}
-                    includeArtifacts={includeArtifacts}
-                    setIncludeArtifacts={setIncludeArtifacts}
-                    disabledArtifacts={disabledArtifacts}
-                    setDisabledArtifacts={setDisabledArtifacts}
                     getManaSymbol={getManaSymbol}
+                    getFetchSymbol={getFetchSymbol}
                   />
                 </div>
+              </details>
+
+              {parsedDeck.artifacts.length > 0 && (
+                <details className="section-details" open>
+                  <summary className="section-summary">
+                    🏺 Artifacts &amp; Mana Rocks
+                    <span className="section-summary__chevron">▾</span>
+                  </summary>
+                  <div className="panel-grid">
+                    <ArtifactsPanel
+                      parsedDeck={parsedDeck}
+                      includeArtifacts={includeArtifacts}
+                      setIncludeArtifacts={setIncludeArtifacts}
+                      disabledArtifacts={disabledArtifacts}
+                      setDisabledArtifacts={setDisabledArtifacts}
+                      getManaSymbol={getManaSymbol}
+                    />
+                  </div>
+                </details>
               )}
 
               {parsedDeck.creatures.length > 0 && (
-                <div className="panel-grid">
-                  <CreaturesPanel
-                    parsedDeck={parsedDeck}
-                    includeCreatures={includeCreatures}
-                    setIncludeCreatures={setIncludeCreatures}
-                    disabledCreatures={disabledCreatures}
-                    setDisabledCreatures={setDisabledCreatures}
-                    getManaSymbol={getManaSymbol}
-                  />
-                </div>
+                <details className="section-details" open>
+                  <summary className="section-summary">
+                    🐉 Creatures &amp; Mana Dorks
+                    <span className="section-summary__chevron">▾</span>
+                  </summary>
+                  <div className="panel-grid">
+                    <CreaturesPanel
+                      parsedDeck={parsedDeck}
+                      includeCreatures={includeCreatures}
+                      setIncludeCreatures={setIncludeCreatures}
+                      disabledCreatures={disabledCreatures}
+                      setDisabledCreatures={setDisabledCreatures}
+                      getManaSymbol={getManaSymbol}
+                    />
+                  </div>
+                </details>
               )}
 
               {parsedDeck.exploration?.length > 0 && (
-                <div className="panel-grid">
-                  <ExplorationPanel
-                    parsedDeck={parsedDeck}
-                    includeExploration={includeExploration}
-                    setIncludeExploration={setIncludeExploration}
-                    disabledExploration={disabledExploration}
-                    setDisabledExploration={setDisabledExploration}
-                  />
-                </div>
+                <details className="section-details" open>
+                  <summary className="section-summary">
+                    🧭 Exploration Effects
+                    <span className="section-summary__chevron">▾</span>
+                  </summary>
+                  <div className="panel-grid">
+                    <ExplorationPanel
+                      parsedDeck={parsedDeck}
+                      includeExploration={includeExploration}
+                      setIncludeExploration={setIncludeExploration}
+                      disabledExploration={disabledExploration}
+                      setDisabledExploration={setDisabledExploration}
+                    />
+                  </div>
+                </details>
               )}
 
               {parsedDeck.rampSpells?.length > 0 && (
-                <div className="panel-grid">
-                  <RampSpellsPanel
-                    parsedDeck={parsedDeck}
-                    includeRampSpells={includeRampSpells}
-                    setIncludeRampSpells={setIncludeRampSpells}
-                    disabledRampSpells={disabledRampSpells}
-                    setDisabledRampSpells={setDisabledRampSpells}
-                    renderManaCost={renderManaCost}
-                  />
-                </div>
+                <details className="section-details" open>
+                  <summary className="section-summary">
+                    🌿 Ramp Spells
+                    <span className="section-summary__chevron">▾</span>
+                  </summary>
+                  <div className="panel-grid">
+                    <RampSpellsPanel
+                      parsedDeck={parsedDeck}
+                      includeRampSpells={includeRampSpells}
+                      setIncludeRampSpells={setIncludeRampSpells}
+                      disabledRampSpells={disabledRampSpells}
+                      setDisabledRampSpells={setDisabledRampSpells}
+                      renderManaCost={renderManaCost}
+                    />
+                  </div>
+                </details>
               )}
 
               {parsedDeck.rituals?.length > 0 && (
-                <div className="panel-grid">
-                  <RitualsPanel
-                    parsedDeck={parsedDeck}
-                    includeRituals={includeRituals}
-                    setIncludeRituals={setIncludeRituals}
-                    disabledRituals={disabledRituals}
-                    setDisabledRituals={setDisabledRituals}
-                    renderManaCost={renderManaCost}
-                  />
-                </div>
+                <details className="section-details" open>
+                  <summary className="section-summary">
+                    ⚡ Rituals
+                    <span className="section-summary__chevron">▾</span>
+                  </summary>
+                  <div className="panel-grid">
+                    <RitualsPanel
+                      parsedDeck={parsedDeck}
+                      includeRituals={includeRituals}
+                      setIncludeRituals={setIncludeRituals}
+                      disabledRituals={disabledRituals}
+                      setDisabledRituals={setDisabledRituals}
+                      renderManaCost={renderManaCost}
+                    />
+                  </div>
+                </details>
               )}
 
               {(parsedDeck.spells.length > 0 ||
@@ -934,12 +1021,18 @@ const MTGMonteCarloAnalyzer = () => {
                 parsedDeck.rituals?.length > 0 ||
                 parsedDeck.rampSpells?.length > 0 ||
                 parsedDeck.exploration?.length > 0) && (
-                <SpellsPanel
-                  parsedDeck={parsedDeck}
-                  selectedKeyCards={selectedKeyCards}
-                  setSelectedKeyCards={setSelectedKeyCards}
-                  renderManaCost={renderManaCost}
-                />
+                <details className="section-details" open>
+                  <summary className="section-summary">
+                    🎯 Key Cards (Spells)
+                    <span className="section-summary__chevron">▾</span>
+                  </summary>
+                  <SpellsPanel
+                    parsedDeck={parsedDeck}
+                    selectedKeyCards={selectedKeyCards}
+                    setSelectedKeyCards={setSelectedKeyCards}
+                    renderManaCost={renderManaCost}
+                  />
+                </details>
               )}
 
               {/* Simulation Settings */}
@@ -975,6 +1068,20 @@ const MTGMonteCarloAnalyzer = () => {
                 runSimulation={runSimulation}
                 isSimulating={isSimulating}
               />
+            </div>
+          )}
+
+          {/* Empty state — deck parsed but no results yet */}
+          {parsedDeck && !simulationResults && !isSimulating && (
+            <div className="panel">
+              <div className="empty-results">
+                <span className="empty-results__icon">🎲</span>
+                <p className="empty-results__text">Ready to simulate</p>
+                <p className="empty-results__sub">
+                  Configure settings above and click <strong>Start Simulation</strong> to see
+                  results here.
+                </p>
+              </div>
             </div>
           )}
 

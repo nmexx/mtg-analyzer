@@ -1,7 +1,10 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { readFileSync } from 'fs'
+import { resolve } from 'path'
+import { fileURLToPath } from 'url'
 
+const __dirname = fileURLToPath(new URL('.', import.meta.url))
 const pkg = JSON.parse(readFileSync('./package.json', 'utf-8'))
 
 // Replaces %APP_VERSION% in index.html with the version from package.json
@@ -27,6 +30,10 @@ export default defineConfig({
     sourcemap: false,
     minify: 'terser',
     rollupOptions: {
+      input: {
+        main: resolve(__dirname, 'index.html'),
+        tutorial: resolve(__dirname, 'tutorial.html'),
+      },
       output: {
         manualChunks(id) {
           // React runtime in its own chunk — cached across every deploy

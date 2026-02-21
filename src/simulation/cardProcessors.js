@@ -5,11 +5,11 @@
  * objects used throughout the simulation.  No React state is read here.
  */
 
-import { RAMP_SPELL_DATA } from '../../Card_Archive/Ramp_Spells.js';
-import { ARTIFACT_DATA, BURST_MANA_SOURCES } from '../../Card_Archive/Artifacts.js';
-import { MANA_DORK_DATA } from '../../Card_Archive/Mana_Dorks.js';
-import { EXPLORATION_EFFECTS } from '../../Card_Archive/Exploration_Effects.js';
-import { RITUAL_DATA } from '../../Card_Archive/Rituals.js';
+import { RAMP_SPELL_DATA } from '../../card_data/Ramp_Spells.js';
+import { ARTIFACT_DATA, BURST_MANA_SOURCES } from '../../card_data/Artifacts.js';
+import { MANA_DORK_DATA } from '../../card_data/Mana_Dorks.js';
+import { EXPLORATION_EFFECTS } from '../../card_data/Exploration_Effects.js';
+import { RITUAL_DATA } from '../../card_data/Rituals.js';
 import LAND_DATA, {
   FETCH_LAND_DATA,
   KNOWN_FETCH_LANDS,

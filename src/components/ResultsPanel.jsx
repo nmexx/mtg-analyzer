@@ -97,12 +97,24 @@ const ResultsPanel = ({
         <h3>📊 Simulation Results</h3>
         <p>Iterations: {iterations.toLocaleString()}</p>
         <p>Hands Kept: {simulationResults.handsKept.toLocaleString()}</p>
-        {enableMulligans && (
-          <p>
-            Mulligan Rate:{' '}
-            {iterations > 0 ? ((simulationResults.mulligans / iterations) * 100).toFixed(1) : 0}%
-          </p>
-        )}
+        {enableMulligans &&
+          (() => {
+            const mulliganPct =
+              iterations > 0 ? (simulationResults.mulligans / iterations) * 100 : 0;
+            return (
+              <p>
+                Mulligan Rate:{' '}
+                <strong
+                  style={{
+                    color:
+                      mulliganPct >= 35 ? '#b91c1c' : mulliganPct >= 18 ? '#92400e' : '#15803d',
+                  }}
+                >
+                  {mulliganPct.toFixed(1)}%
+                </strong>
+              </p>
+            );
+          })()}
         <div className="export-buttons">
           <button onClick={exportResultsAsPNG} className="btn-success">
             📸 Export Results as PNG
@@ -350,7 +362,25 @@ const ResultsPanel = ({
                                 {turnIdx === -1 ? (
                                   <span className="first-playable-never">—</span>
                                 ) : (
-                                  <span className="first-playable-turn">T{turnIdx + 1}</span>
+                                  <span
+                                    className="first-playable-turn"
+                                    style={{
+                                      color:
+                                        turnIdx + 1 <= 2
+                                          ? '#15803d'
+                                          : turnIdx + 1 <= 4
+                                            ? '#92400e'
+                                            : '#b91c1c',
+                                      background:
+                                        turnIdx + 1 <= 2
+                                          ? '#dcfce7'
+                                          : turnIdx + 1 <= 4
+                                            ? '#fef3c7'
+                                            : '#fee2e2',
+                                    }}
+                                  >
+                                    T{turnIdx + 1}
+                                  </span>
                                 )}
                               </td>
                             );
@@ -398,18 +428,28 @@ const ResultsPanel = ({
                           </td>
                           <td>{cmcDisplay}</td>
                           <td>{turnDisplay}</td>
-                          <td>
+                          <td className="prob-bar-cell">
+                            {pct != null && (
+                              <div
+                                className="prob-bar-fill"
+                                style={{
+                                  width: `${Math.min(pct, 100)}%`,
+                                  background:
+                                    pct >= 70 ? '#4ade80' : pct >= 40 ? '#f59e0b' : '#f87171',
+                                }}
+                              />
+                            )}
                             <span
-                              className="on-curve-pct"
+                              className="on-curve-pct prob-bar-value"
                               style={{
                                 color:
                                   pct == null
                                     ? '#9ca3af'
                                     : pct >= 70
-                                      ? '#4ade80'
+                                      ? '#15803d'
                                       : pct >= 40
-                                        ? '#f59e0b'
-                                        : '#f87171',
+                                        ? '#92400e'
+                                        : '#b91c1c',
                               }}
                             >
                               {pctDisplay}

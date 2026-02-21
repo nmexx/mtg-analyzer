@@ -113,7 +113,7 @@ function ManaCurve({ parsedDeck }) {
   }));
 
   return (
-    <div style={{ marginTop: '1rem' }}>
+    <div style={{ marginTop: '1.75rem' }}>
       <h4
         style={{
           marginBottom: '0.5rem',
@@ -123,8 +123,8 @@ function ManaCurve({ parsedDeck }) {
       >
         Mana Curve
       </h4>
-      <ResponsiveContainer width="100%" height={160}>
-        <BarChart data={curveData} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
+      <ResponsiveContainer width="100%" height={175}>
+        <BarChart data={curveData} margin={{ top: 4, right: 8, left: -20, bottom: 20 }}>
           <CartesianGrid strokeDasharray="3 3" vertical={false} />
           <XAxis
             dataKey="cmc"
@@ -170,7 +170,7 @@ function ColorPipDemand({ parsedDeck }) {
   if (pipData.length === 0) return null;
 
   return (
-    <div style={{ marginTop: '1rem' }}>
+    <div style={{ marginTop: '1.75rem' }}>
       <h4
         style={{
           marginBottom: '0.5rem',
@@ -180,8 +180,8 @@ function ColorPipDemand({ parsedDeck }) {
       >
         Color Pip Demand
       </h4>
-      <ResponsiveContainer width="100%" height={120}>
-        <BarChart data={pipData} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
+      <ResponsiveContainer width="100%" height={145}>
+        <BarChart data={pipData} margin={{ top: 4, right: 8, left: -20, bottom: 10 }}>
           <CartesianGrid strokeDasharray="3 3" vertical={false} />
           <XAxis dataKey="label" tick={{ fontSize: 11 }} />
           <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
@@ -252,7 +252,7 @@ function ColorPipCreation({ parsedDeck }) {
   if (creationData.length === 0) return null;
 
   return (
-    <div style={{ marginTop: '1rem' }}>
+    <div style={{ marginTop: '1.75rem' }}>
       <h4
         style={{
           marginBottom: '0.5rem',
@@ -262,8 +262,8 @@ function ColorPipCreation({ parsedDeck }) {
       >
         Color Pip Creation
       </h4>
-      <ResponsiveContainer width="100%" height={120}>
-        <BarChart data={creationData} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
+      <ResponsiveContainer width="100%" height={145}>
+        <BarChart data={creationData} margin={{ top: 4, right: 8, left: -20, bottom: 10 }}>
           <CartesianGrid strokeDasharray="3 3" vertical={false} />
           <XAxis dataKey="label" tick={{ fontSize: 11 }} />
           <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />

@@ -28,12 +28,13 @@ simulationCore.js
     └─ calculateManaAvailability()  how much mana each permanent provides
 ```
 
-All land knowledge lives in two archive files:
+All land knowledge lives in two archive files plus one derived module:
 
 | File | Purpose |
 |---|---|
-| `Card_Archive/Lands.js` | Non-fetch land cycles, `sim_flags` per cycle/card |
-| `Card_Archive/Fetch_Lands.js` | One entry per fetch land: `fetchType`, `fetchColors`, cost, targeting rules |
+| `card_data/Lands.js` | Non-fetch land cycles, `sim_flags` per cycle/card |
+| `card_data/Fetch_Lands.js` | One entry per fetch land: `fetchType`, `fetchColors`, cost, targeting rules |
+| `src/simulation/landData.js` | Builds the `LAND_DATA` Map from `Lands.js`; exports named `Set` constants per flag: `SLOW_LANDS`, `BATTLE_LANDS`, `FILTER_LANDS`, `ODYSSEY_FILTER_LANDS`, `HORIZON_LANDS`, `THRIVING_LANDS`, `VERGE_LANDS`, `MDFC_LANDS`, `BOUNCE_LANDS`, `PATHWAY_LANDS`, etc. `processLand()` imports these sets and stamps matching boolean flags directly on each card object. |
 
 ---
 
@@ -55,7 +56,7 @@ All land knowledge lives in two archive files:
 | Check Lands | `isCheck: true` | Untapped only when a matching subtype land is already in play (§3.2) |
 | Horizon Lands | `isHorizonLand: true` | Always untapped; every tap costs 1 life (§3.14) |
 | Lair Lands (Planeshift) | `isBounce: true, entersTappedAlways: false` | 3-colour untapped bounce; returns a non-Lair land on ETB (§3.7) |
-| MDFCs & Modal Lands | `isMDFCLand: true` | Pay 3 life to enter untapped on turns 1–4; tapped with no life cost from turn 5 onward (§3.15) |
+| MDFCs & Modal Lands | `isMDFCLand: true`, `lifeloss: 3` | Pay 3 life to enter untapped on turns 1–4; tapped with no life cost from turn 5 onward (§3.15) |
 | Tron Lands | `entersTappedAlways: false` | Produce {C}; assembly bonus not simulated |
 | Utility (always untapped) | `isUtilityUntapped: true` | Generic bucket for lands entered as untapped utility |
 | Ancient Tomb | `isAncientTomb: true` | Produces {C}{C}; 2 life per upkeep tracked separately |
@@ -74,10 +75,9 @@ All land knowledge lives in two archive files:
 | Mirage Fetch Lands | `fetchType: 'slow'` | ETB tapped; treated like a land that produces its fetch targets next turn |
 | Conditional-Life Lands | `isConditionalLife: true` | Always tapped; life-gain is not tracked |
 | Crowd Lands | `isCrowd: true` | Untapped in Commander mode, tapped otherwise (§3.8) |
-| Road Lands (Aetherdrift) | `isRoadLand: true` | Always tapped in sim; actual untap condition (control artifact/vehicle) not evaluated |
 | Surveil Lands (MKM) | `entersTappedAlways: true` | Always tapped; ETB trigger: surveil 1 (not simulated); has basic subtypes |
 | Bicycle Lands (Amonkhet) | `entersTappedAlways: true` | Always tapped; cycling not simulated; has basic subtypes (fetchable) |
-| Snarl Lands (Strixhaven) | `isReveal: true` | Same flag as Reveal Lands; always tapped in sim |
+| Snarl Lands (Strixhaven) | `isReveal: true` | Merged into the Reveal Lands (Show Lands / Snarls) cycle in `Lands.js`; always tapped in sim |
 | Scry Lands (Theros) | `entersTappedAlways: true` | Always tapped; ETB scry 1 not simulated |
 | Vivid Lands | `entersTappedAlways: true` | Always tapped; charge-counter "any colour" mode not simulated |
 | Gain Lands / Refuge Lands / Coastal Lands | `entersTappedAlways: true` | Always tapped; life-gain ETB not tracked |
@@ -139,6 +139,11 @@ the 3rd land onward.  This makes them strong on turns 1–3 and weak later.
 
 Untapped only when ≥2 basic lands are already in play.  This means they are
 almost always tapped in the early game.
+
+The database currently holds 8 of the 10 possible colour pairs: the original
+BFZ five (Prairie Stream, Sunken Hollow, Smoldering Marsh, Cinder Glade,
+Canopy Vista) plus three added in the February 2026 data update — Radiant
+Summit ({R}/{W}), Vernal Fen ({B}/{G}), and Sodden Verdure ({G}/{U}).
 
 ### 3.5 Filter Lands
 
@@ -215,6 +220,12 @@ first (fixed) colour is kept.
 
 ### 3.12 Verge Lands
 
+> **Data fix (Feb 2026):** `Lands.js` previously omitted `isVerge: true` from
+> the cycle's `sim_flags`, which prevented `processLand()` from setting the flag
+> on the card object.  As a result, Verge lands fell back to `entersTappedAlways:
+> false` (always untapped) and the secondary-colour condition was never
+> evaluated.  The flag has been restored and Verge lands now behave correctly.
+
 Verge lands (e.g. Sunbillow Verge) produce their **primary colour unconditionally**
 and their **secondary colour only when the required basic-land subtype is already
 on the battlefield** at the moment `calculateManaAvailability()` is called.
@@ -234,6 +245,12 @@ secondary colour from the *next* spell-cast check onward (after the Mountain has
 been placed on the battlefield).
 
 ### 3.13 Slow Lands
+
+> **Data fix (Feb 2026):** `Lands.js` previously used `sim_flags: {
+> entersTappedAlways: true }` for the Slow Lands cycle, which caused every Slow
+> Land to enter tapped unconditionally and bypassed the ≥2-land check entirely.
+> The flag was corrected to `isSlowLand: true` and the `SLOW_LANDS` set was
+> added to `landData.js`; Slow Lands now enter correctly.
 
 Untapped only when ≥2 total lands are already on the battlefield at the moment
 of play.  Concretely, `doesLandEnterTapped()` returns `true` when the land
@@ -431,7 +448,6 @@ differ from optimal or situational play:
 | Pain land damage | Charged every turn 1–5 regardless of whether coloured mana was actually needed |
 | MDFC land life payment | Pays 3 life only when entering untapped (turns 1–4); enters tapped with no life cost from turn 5 onward |
 | Horizon land damage | Charged every turn 1–5; no colourless opt-out (unlike pain lands, Horizon Lands have no free {C} mode) |
-| Road land untap condition | Road Lands always enter tapped in the sim; the "control an artifact or vehicle" untap condition is not evaluated |
 | Tapping order | Greedy: colours paid first, generic paid last; not globally optimal |
 | City of Traitors | Sacrificed whenever *any* other land is played; does not model strategic timing |
 | Thriving lands | Second colour locked in on ETB based on key card pip frequency; cannot change later |

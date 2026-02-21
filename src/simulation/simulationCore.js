@@ -17,7 +17,7 @@ import {
   SIMPLIFY_MOX_CONDITIONS,
   MOX_PRIORITY_ARTIFACTS,
   BURST_MANA_SOURCES,
-} from '../../Card_Archive/Artifacts.js';
+} from '../../card_data/Artifacts.js';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Module-level lookup tables (defined once, reused everywhere)
