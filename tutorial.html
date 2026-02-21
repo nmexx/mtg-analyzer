@@ -8,7 +8,10 @@
       content="How the CommanderTables Monte Carlo simulator works — assumptions, methodology and tips."
     />
     <title>How It Works — Commandertables</title>
-    <!-- Apply saved theme before paint to avoid flash -->
+    <!-- Apply saved theme before paint to avoid flash.
+         IMPORTANT: this <script> must come before any <link rel="stylesheet">.
+         Inline scripts wait for preceding stylesheets to load, so putting the
+         link first would cause a flash of light mode before data-theme is set. -->
     <script>
       document.documentElement.setAttribute(
         'data-theme',
