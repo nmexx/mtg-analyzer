@@ -1760,7 +1760,8 @@
           <li>London and Vancouver mulligan rules with four configurable strategies.</li>
           <li>
             Per-turn statistics: average lands, untapped lands, total mana, per-color mana, life
-            loss.
+            loss, and cards drawn per turn (natural draw + upkeep draw-engine triggers + one-shot
+            draw spells cast that turn).
           </li>
           <li>
             Key-card castability per turn (with and without burst mana), on-curve castability.
@@ -1785,11 +1786,6 @@
           <li>
             <strong>Opponent actions</strong> — counterspells, hand disruption, land destruction,
             and any interaction are completely absent.
-          </li>
-          <li>
-            <strong>Card-draw spells</strong> — Brainstorm, Rhystic Study, Harmonize, or any
-            non-land card that draws additional cards. Only the one natural draw per turn is
-            simulated.
           </li>
           <li><strong>Combat &amp; damage</strong> — no attacking, blocking, or combat damage.</li>
           <li>
@@ -2307,6 +2303,16 @@
             (one-time or per-turn) to model conditional or partial draw effects — for example, set
             Rhystic Study to a lower per-turn value to account for opponents paying the
             <code>{1}</code>.
+          </li>
+          <li>
+            <strong>Read the Cards Drawn per Turn chart.</strong> After running a simulation the
+            results panel includes a <em>Cards Drawn per Turn</em> chart (cyan line, ±1σ band).
+            It shows how many cards enter your hand each turn from all sources combined: the
+            natural draw, upkeep triggers from draw-engine permanents (Rhystic Study, Phyrexian
+            Arena, Sylvan Library, etc.), and one-shot draw spells cast that turn (Brainstorm,
+            Night's Whisper, Harmonize, etc.). The opening hand is not counted. Use this chart to
+            quantify the concrete advantage that draw engines add — and to compare two decks'
+            card flow side by side in the Comparison panel.
           </li>
           <li>
             <strong>Hand size enforcement.</strong> The simulator discards down to the configured

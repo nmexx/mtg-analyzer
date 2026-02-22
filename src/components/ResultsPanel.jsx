@@ -286,6 +286,46 @@ const ResultsPanel = ({
         </ResponsiveContainer>
       </div>
 
+      {/* Cards Drawn per Turn */}
+      {chartData.cardsDrawnData && (
+        <div className="panel">
+          <h3>Cards Drawn per Turn</h3>
+          <p className="card-meta">
+            Includes natural draw, draw-engine upkeep triggers, and one-shot draw spells cast that
+            turn. Does not include the opening hand. Shaded band = ±1σ.
+          </p>
+          <ResponsiveContainer width="100%" height={300}>
+            <ComposedChart data={chartData.cardsDrawnData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis
+                dataKey="turn"
+                label={{ value: 'Turn', position: 'insideBottom', offset: -5 }}
+              />
+              <YAxis label={{ value: 'Cards', angle: -90, position: 'insideLeft' }} />
+              <Tooltip content={makeStdTooltip({ 'Cards Drawn': '_drawnSd' })} />
+              <Legend />
+              <Area
+                type="monotone"
+                dataKey={d => [d['Cards Drawn Lo'], d['Cards Drawn Hi']]}
+                fill="rgba(6,182,212,0.18)"
+                stroke="none"
+                name="Cards Drawn ±1σ"
+                legendType="none"
+                activeDot={false}
+                dot={false}
+              />
+              <Line
+                type="monotone"
+                dataKey="Cards Drawn"
+                stroke="#06b6d4"
+                strokeWidth={2}
+                dot={false}
+              />
+            </ComposedChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+
       {/* Key Card Playability */}
       {selectedKeyCards.size > 0 && (
         <div className="panel">

@@ -108,9 +108,11 @@
     - Requires storing one integer per iteration at the mulligan step; chart is a simple bar.
     - Makes mulligan strategy tuning concrete and visual.
 
-20. **Card draw / cantrip land-thinning** `[Medium]`
-    - Spells with a `drawsCards: N` flag (Night's Whisper, Sign in Blood, Harmonize, etc.) should draw N cards from the library during `castSpells`.
-    - Complements existing scry modeling (item 11) and improves fidelity for black/blue midrange.
+20. **Card draw / cantrip land-thinning** --------DONE
+    - Spells with a `drawsCards: N` flag (Night's Whisper, Sign in Blood, Harmonize, Wheel of Fortune, Rhystic Study, Phyrexian Arena, Brainstorm, etc.) are now modelled by the `CARD_DRAW_DATA` library (115+ supported cards).
+    - Draw permanents enter the battlefield and produce card draw each upkeep; one-shot instants/sorceries draw immediately when cast (Phase 3 of `castSpells`).
+    - A per-card override UI in the Draw Spells panel lets users set a custom draw amount (one-time or per-turn) for conditional effects (e.g. reducing Rhystic Study's value when opponents pay `{1}`).
+    - `disabledDrawSpells` and `includeDrawSpells` flags exposed in Simulation Settings.
 
 ---
 
@@ -216,3 +218,11 @@
     - New `CostReducersPanel.jsx` component mirrors the Rituals panel pattern — shows each reducer with a toggle and a human-readable scope label (e.g. "−1 to Green spells")
     - `App.jsx` — `includeCostReducers` + `disabledCostReducers` state added to both deck slots (A and B), persisted in localStorage/URL, passed to `buildSimConfig`, and rendered in both single-deck and comparison views
     - 32 new tests added across three files (`cardProcessors`, `simulationCore`, `monteCarlo`); total suite: 507 tests.
+
+34. **Cards Drawn per Turn chart** --------DONE
+    - New per-turn statistic tracking how many cards enter the player's hand each turn from all sources: natural draw (1/turn in non-Commander; 1/turn from turn 1 in Commander mode), upkeep triggers from draw-engine permanents (Rhystic Study, Phyrexian Arena, etc.), and one-shot draw spells cast that turn (Brainstorm, Night's Whisper, Harmonize, etc.). The opening hand is excluded.
+    - **`simulationCore.js`** — `castSpells` Phase 3 increments `simConfig.drawTracker.count` after resolving each one-shot draw spell.
+    - **`monteCarlo.js`** — `cardsDrawnPerTurn` array added to the `results` object; `cardsDrawnThisTurn` counter reset each turn and accumulated from upkeep draws, the natural draw, and `simConfig.drawTracker` after `castSpells`; standard deviation and average collapse follow the same pattern as `lifeLossPerTurn`.
+    - **`uiHelpers.jsx`** — `prepareChartData` builds a `cardsDrawnData` array with avg, `lo`, `hi`, and `_drawnSd` fields.
+    - **`ResultsPanel.jsx`** — new cyan `ComposedChart` panel (±1σ shaded band + average line) inserted after the Life Loss chart.
+    - **`ComparisonResultsPanel.jsx`** — `drawnCompare` merged array + overlay line chart added after the Life Loss comparison panel, enabling direct A vs B card-flow comparison.

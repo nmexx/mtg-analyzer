@@ -1008,6 +1008,7 @@ export const castSpells = (
             hand.push(library.shift());
           }
           cardsDrawn = toDraw;
+          if (simConfig?.drawTracker) simConfig.drawTracker.count += cardsDrawn;
         }
 
         if (turnLog) {

@@ -140,6 +140,7 @@ export const prepareChartData = (simulationResults, turns) => {
   const landsData = [];
   const manaByColorData = [];
   const lifeLossData = [];
+  const cardsDrawnData = [];
   const keyCardsData = [];
 
   for (let i = 0; i < turns; i++) {
@@ -185,6 +186,16 @@ export const prepareChartData = (simulationResults, turns) => {
       _lifeLossSd: safeToFixed(lifeLossSd, 2),
     });
 
+    const drawnAvg = simulationResults.cardsDrawnPerTurn?.[i] || 0;
+    const drawnSd = simulationResults.cardsDrawnPerTurnStdDev?.[i] || 0;
+    cardsDrawnData.push({
+      turn: i + 1,
+      'Cards Drawn': safeToFixed(drawnAvg, 2),
+      'Cards Drawn Lo': safeToFixed(Math.max(0, drawnAvg - drawnSd), 2),
+      'Cards Drawn Hi': safeToFixed(drawnAvg + drawnSd, 2),
+      _drawnSd: safeToFixed(drawnSd, 2),
+    });
+
     const keyCardRow = { turn: i + 1 };
     if (simulationResults.keyCardPlayability) {
       Object.keys(simulationResults.keyCardPlayability).forEach(cardName => {
@@ -202,5 +213,5 @@ export const prepareChartData = (simulationResults, turns) => {
     keyCardsData.push(keyCardRow);
   }
 
-  return { landsData, manaByColorData, lifeLossData, keyCardsData };
+  return { landsData, manaByColorData, lifeLossData, cardsDrawnData, keyCardsData };
 };

@@ -228,6 +228,9 @@ export const monteCarlo = (deckToParse, config = {}) => {
     lifeLossPerTurn: Array(turns)
       .fill(null)
       .map(() => []),
+    cardsDrawnPerTurn: Array(turns)
+      .fill(null)
+      .map(() => []),
     keyCardPlayability: {},
     keyCardPlayabilityBurst: {},
     keyCardOnCurvePlayability: {},
@@ -379,6 +382,7 @@ export const monteCarlo = (deckToParse, config = {}) => {
       cumulativeLifeLoss += manaVaultDamage;
 
       // Upkeep — per-turn draw effects from draw spell permanents on battlefield
+      let cardsDrawnThisTurn = 0;
       if (includeDrawSpells) {
         battlefield.forEach(p => {
           const card = p.card;
@@ -393,6 +397,7 @@ export const monteCarlo = (deckToParse, config = {}) => {
             hand.push(library.shift());
           }
           if (toDraw > 0) {
+            cardsDrawnThisTurn += toDraw;
             turnLog.actions.push(`${card.name}: drew ${toDraw} card${toDraw !== 1 ? 's' : ''}`);
           }
         });
@@ -403,6 +408,7 @@ export const monteCarlo = (deckToParse, config = {}) => {
       if (shouldDraw && library.length > 0) {
         const drawn = library.shift();
         hand.push(drawn);
+        cardsDrawnThisTurn += 1;
         turnLog.actions.push(`Drew: ${drawn.name}`);
       }
 
@@ -562,6 +568,7 @@ export const monteCarlo = (deckToParse, config = {}) => {
       }
 
       // Phase 6: Cast spells
+      simConfig.drawTracker = { count: 0 };
       castSpells(
         hand,
         battlefield,
@@ -573,6 +580,7 @@ export const monteCarlo = (deckToParse, config = {}) => {
         turn,
         simConfig
       );
+      cardsDrawnThisTurn += simConfig.drawTracker.count;
 
       // Phase 7: Calculate damage from mana sources and other permanents on the battlefield
       const { total: battlefieldDmg, breakdown: battlefieldDmgLog } = calculateBattlefieldDamage(
@@ -596,6 +604,7 @@ export const monteCarlo = (deckToParse, config = {}) => {
       results.landsPerTurn[turn].push(landCount);
       results.untappedLandsPerTurn[turn].push(untappedLandCount);
       results.lifeLossPerTurn[turn].push(cumulativeLifeLoss);
+      results.cardsDrawnPerTurn[turn].push(cardsDrawnThisTurn);
 
       const manaAvailable = calculateManaAvailability(battlefield);
       results.totalManaPerTurn[turn].push(manaAvailable.total);
@@ -719,6 +728,7 @@ export const monteCarlo = (deckToParse, config = {}) => {
   results.untappedLandsPerTurnStdDev = results.untappedLandsPerTurn.map(arr => stdDev(arr));
   results.totalManaPerTurnStdDev = results.totalManaPerTurn.map(arr => stdDev(arr));
   results.lifeLossPerTurnStdDev = results.lifeLossPerTurn.map(arr => stdDev(arr));
+  results.cardsDrawnPerTurnStdDev = results.cardsDrawnPerTurn.map(arr => stdDev(arr));
   results.colorsByTurnStdDev = results.colorsByTurn.map(colorObj => {
     const out = {};
     Object.keys(colorObj).forEach(color => {
@@ -733,6 +743,7 @@ export const monteCarlo = (deckToParse, config = {}) => {
     results.untappedLandsPerTurn[t] = average(results.untappedLandsPerTurn[t]);
     results.totalManaPerTurn[t] = average(results.totalManaPerTurn[t]);
     results.lifeLossPerTurn[t] = average(results.lifeLossPerTurn[t]);
+    results.cardsDrawnPerTurn[t] = average(results.cardsDrawnPerTurn[t]);
     Object.keys(results.colorsByTurn[t]).forEach(color => {
       results.colorsByTurn[t][color] = average(results.colorsByTurn[t][color]);
     });

@@ -131,6 +131,12 @@ const ComparisonResultsPanel = ({
     [`${labelB}: Life Loss`]: chartDataB.lifeLossData[i]['Life Loss'],
   }));
 
+  const drawnCompare = Array.from({ length: numTurns }, (_, i) => ({
+    turn: chartDataA.cardsDrawnData[i].turn,
+    [`${labelA}: Cards Drawn`]: chartDataA.cardsDrawnData[i]['Cards Drawn'],
+    [`${labelB}: Cards Drawn`]: chartDataB.cardsDrawnData[i]['Cards Drawn'],
+  }));
+
   // ── Key card playability — union of both sets ────────────────────────────────
   const allKeyCards = new Set([...selectedKeyCardsA, ...selectedKeyCardsB]);
   const keyCompare = Array.from({ length: numTurns }, (_, i) => {
@@ -324,6 +330,37 @@ const ComparisonResultsPanel = ({
             <Line
               type="monotone"
               dataKey={`${labelB}: Life Loss`}
+              stroke={DECK_B.primary}
+              strokeWidth={2}
+              dot={false}
+            />
+          </ComposedChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* ── Cards Drawn per Turn ─────────────────────────────────────────────── */}
+      <div className="panel">
+        <h3>Cards Drawn per Turn</h3>
+        <p className="card-meta">
+          Blue = {labelA} · Amber = {labelB}
+        </p>
+        <ResponsiveContainer width="100%" height={300}>
+          <ComposedChart data={drawnCompare}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="turn" label={{ value: 'Turn', position: 'insideBottom', offset: -5 }} />
+            <YAxis label={{ value: 'Cards', angle: -90, position: 'insideLeft' }} />
+            <Tooltip content={SimpleTooltip} />
+            <Legend />
+            <Line
+              type="monotone"
+              dataKey={`${labelA}: Cards Drawn`}
+              stroke={DECK_A.primary}
+              strokeWidth={2}
+              dot={false}
+            />
+            <Line
+              type="monotone"
+              dataKey={`${labelB}: Cards Drawn`}
               stroke={DECK_B.primary}
               strokeWidth={2}
               dot={false}
