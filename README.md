@@ -72,6 +72,8 @@ Tests are written with [Vitest](https://vitest.dev/) and cover the simulation en
 
 ### Deck Input & Parsing
 - Accepts standard **MTG Arena export format** (`4 Lightning Bolt`, `3 Island`, etc.)
+- Lines without a leading quantity (e.g. `Lightning Bolt`) are treated as a single copy (quantity 1)
+- **MDFC lands** (e.g. `Hengegate Pathway // Mistgate Pathway`) are correctly counted once in the total card count; the spell face is stored separately for key-card selection without inflating the total
 - Automatically classifies every card into its simulation role: land, mana artifact, mana creature, exploration effect, ramp spell, ritual, or non-mana spell
 - Reports deck statistics (total cards, land count, land percentage)
 - Surfaces parse errors inline without blocking the rest of the UI

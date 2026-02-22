@@ -146,6 +146,16 @@
 
 ---
 
+## Bug Fixes (Completed)
+
+- **Deck label removed from single-deck input** — the redundant "Deck" label above the deck textarea in single-deck mode has been removed.
+
+- **No-quantity lines default to 1** — lines without a leading number (e.g. `Lightning Bolt` instead of `1 Lightning Bolt`) now parse as a single copy instead of being silently ignored.
+
+- **MDFC double-count in Total Cards** — Modal double-faced land cards (e.g. `Hengegate Pathway // Mistgate Pathway`) were stored in both `lands[]` and `spells[]` (the spell face is needed for key-card selection), causing them to be counted twice in `totalCards`. The `isMDFCSpellSide` flag is now excluded from the total.
+
+---
+
 ## New — Simulation Accuracy (Code-Audit Findings)
 
 26. **Hand size limit not enforced** `[Low]`

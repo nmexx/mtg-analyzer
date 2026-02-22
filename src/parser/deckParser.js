@@ -61,18 +61,25 @@ export const parseDeckList = async (deckText, parserCtx = {}) => {
     const trimmed = line.trim();
     if (
       !trimmed ||
+      trimmed.startsWith('//') ||
+      trimmed.startsWith('#') ||
       trimmed.toLowerCase() === 'deck' ||
       trimmed.toLowerCase() === 'sideboard' ||
       trimmed.toLowerCase() === 'commander'
     )
       continue;
 
-    const match = trimmed.match(/^(\d+)x?\s+(.+)$/);
-    if (match) {
-      const quantity = parseInt(match[1], 10);
-      const cardName = match[2].trim();
-      cardCounts.set(cardName, (cardCounts.get(cardName) || 0) + quantity);
+    const numMatch = trimmed.match(/^(\d+)x?\s+(.+)$/);
+    let quantity, cardName;
+    if (numMatch) {
+      quantity = parseInt(numMatch[1], 10);
+      cardName = numMatch[2].trim();
+    } else {
+      // No leading number — treat as a single copy
+      quantity = 1;
+      cardName = trimmed;
     }
+    cardCounts.set(cardName, (cardCounts.get(cardName) || 0) + quantity);
   }
 
   if (cardCounts.size === 0) return null;
@@ -129,7 +136,11 @@ export const parseDeckList = async (deckText, parserCtx = {}) => {
   }
 
   const groups = [lands, artifacts, creatures, exploration, rituals, rampSpells, spells];
-  const totalCards = groups.reduce((sum, g) => sum + g.reduce((s, c) => s + c.quantity, 0), 0);
+  // MDFCs are stored in both lands[] and spells[] (isMDFCSpellSide); exclude the spell copy from the count
+  const totalCards = groups.reduce(
+    (sum, g) => sum + g.reduce((s, c) => s + (c.isMDFCSpellSide ? 0 : c.quantity), 0),
+    0
+  );
 
   return {
     lands,

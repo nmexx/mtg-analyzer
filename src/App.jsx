@@ -872,17 +872,14 @@ const MTGMonteCarloAnalyzer = () => {
             <div className="panel-header-row">
               <h3>📝 Deck List</h3>
             </div>
-            <div>
-              <div className="deck-section-label">Deck</div>
-              <textarea
-                value={deckText}
-                onChange={e => setDeckText(e.target.value)}
-                placeholder={
-                  'Paste your deck list here (MTG Arena format)\nExample:\n4 Lightning Bolt\n4 Island\n3 Counterspell'
-                }
-                className="deck-textarea"
-              />
-            </div>
+            <textarea
+              value={deckText}
+              onChange={e => setDeckText(e.target.value)}
+              placeholder={
+                'Paste your deck list here (MTG Arena format)\nExample:\n4 Lightning Bolt\n4 Island\n3 Counterspell'
+              }
+              className="deck-textarea"
+            />
             <button
               onClick={() => handleParseDeck(deckText, setParsedDeck, setSelectedKeyCards)}
               className="btn-primary"
