@@ -696,7 +696,7 @@ export const canPlayCard = (card, manaAvailable, discount = 0) => {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // castSpells
-//   NEW: simConfig = { includeRampSpells, disabledRampSpells }
+//   NEW: simConfig = { includeRampSpells, disabledRampSpells, includeDrawSpells, disabledDrawSpells }
 // ─────────────────────────────────────────────────────────────────────────────
 export const castSpells = (
   hand,
@@ -714,6 +714,8 @@ export const castSpells = (
     disabledRampSpells = new Set(),
     includeCostReducers = true,
     disabledCostReducers = new Set(),
+    includeDrawSpells = true,
+    disabledDrawSpells = new Set(),
   } = simConfig;
 
   // Phase 0: cost reducers — cast before mana producers so their discount
@@ -969,6 +971,57 @@ export const castSpells = (
       }
     }
   }
+
+  // Phase 3: draw spells — cast after ramp spells; lowest priority.
+  // One-shot draw spells (instants/sorceries) are put in the graveyard and
+  // immediately draw their cards.  Permanent draw spells enter the battlefield
+  // and will produce cards every upkeep (handled in monteCarlo.js).
+  if (includeDrawSpells) {
+    let drawChanged = true;
+    while (drawChanged) {
+      drawChanged = false;
+      const manaAvailable = calculateManaAvailability(battlefield, turn);
+      const drawInHand = hand.filter(c => c.isDrawSpell && !disabledDrawSpells.has(c.name));
+
+      for (const drawSpell of drawInHand.sort((a, b) => a.cmc - b.cmc)) {
+        const drawDiscount = calculateCostDiscount(drawSpell, battlefield);
+        if (!canPlayCard(drawSpell, manaAvailable, drawDiscount)) continue;
+
+        hand.splice(hand.indexOf(drawSpell), 1);
+        if (drawSpell.staysOnBattlefield) {
+          battlefield.push({
+            card: drawSpell,
+            tapped: false,
+            summoningSick: false,
+            enteredOnTurn: turn,
+          });
+        } else {
+          graveyard.push(drawSpell);
+        }
+        tapManaSources(drawSpell, battlefield, drawDiscount);
+
+        // One-shot draw: immediately draw cards into hand
+        let cardsDrawn = 0;
+        if (drawSpell.isOneTimeDraw && drawSpell.netCardsDrawn > 0) {
+          const toDraw = Math.min(drawSpell.netCardsDrawn, library.length);
+          for (let d = 0; d < toDraw; d++) {
+            hand.push(library.shift());
+          }
+          cardsDrawn = toDraw;
+        }
+
+        if (turnLog) {
+          const verb = drawSpell.staysOnBattlefield ? 'Cast draw permanent' : 'Cast draw spell';
+          const drawNote = drawSpell.isOneTimeDraw
+            ? ` → drew ${cardsDrawn} card${cardsDrawn !== 1 ? 's' : ''}`
+            : ' → draws each turn';
+          turnLog.actions.push(`${verb}: ${drawSpell.name}${drawNote}`);
+        }
+        drawChanged = true;
+        break;
+      }
+    }
+  }
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1039,4 +1092,64 @@ export const calculateBattlefieldDamage = (battlefield, turn) => {
   }
 
   return { total, breakdown };
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// enforceHandSizeLimit
+//   Discards cards from `hand` down to `maxHandSize` at end of turn.
+//   · If `battlefield` has >= `floodNLands` lands → the player is flooded:
+//     prefer discarding lands from hand (tapped-entering ones first).
+//   · Otherwise → prefer discarding the highest-CMC non-land spells (mana
+//     screw or normal discard).
+//   Discarded cards are moved to `graveyard`; each discard is logged.
+// ─────────────────────────────────────────────────────────────────────────────
+export const enforceHandSizeLimit = (
+  hand,
+  graveyard,
+  maxHandSize,
+  battlefield,
+  floodNLands = 5,
+  turnLog = null
+) => {
+  if (hand.length <= maxHandSize) return;
+
+  const landCountOnBF = battlefield.filter(p => p.card.isLand).length;
+  const isFlooded = landCountOnBF >= floodNLands;
+
+  while (hand.length > maxHandSize) {
+    let toDiscard = null;
+
+    if (isFlooded) {
+      // Flooded: discard a land from hand, preferring tapped-entering basics
+      const landsInHand = hand.filter(c => c.isLand);
+      if (landsInHand.length > 0) {
+        toDiscard =
+          landsInHand.find(l => l.entersTappedAlways && l.isBasic) ??
+          landsInHand.find(l => l.entersTappedAlways) ??
+          landsInHand[0];
+      }
+    }
+
+    if (!toDiscard) {
+      // Not flooded, or no lands in hand: discard highest-CMC non-land
+      const nonLands = hand.filter(c => !c.isLand);
+      if (nonLands.length > 0) {
+        toDiscard = nonLands.reduce(
+          (best, c) => ((c.cmc ?? 0) >= (best.cmc ?? 0) ? c : best),
+          nonLands[0]
+        );
+      } else {
+        // Only lands in hand — discard one
+        const basics = hand.filter(c => c.isBasic);
+        toDiscard = basics[0] ?? hand[0];
+      }
+    }
+
+    hand.splice(hand.indexOf(toDiscard), 1);
+    graveyard.push(toDiscard);
+    if (turnLog) {
+      const reason = isFlooded && toDiscard.isLand ? ' (flood discard)' : ' (hand size limit)';
+      turnLog.actions.push(`Discarded: ${toDiscard.name}${reason}`);
+    }
+  }
 };

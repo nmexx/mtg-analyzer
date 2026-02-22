@@ -11,6 +11,7 @@ import { COST_REDUCER_DATA } from '../../card_data/CostReducers.js';
 import { MANA_DORK_DATA } from '../../card_data/Mana_Dorks.js';
 import { EXPLORATION_EFFECTS } from '../../card_data/Exploration_Effects.js';
 import { RITUAL_DATA } from '../../card_data/Rituals.js';
+import { CARD_DRAW_DATA } from '../../card_data/Card_Draw.js';
 import LAND_DATA, {
   FETCH_LAND_DATA,
   KNOWN_FETCH_LANDS,
@@ -596,6 +597,49 @@ export const processCostReducer = data => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
+// processDrawSpell
+//   Converts raw Scryfall data into a draw-spell card object using CARD_DRAW_DATA
+//   for trigger type and draw amounts.
+//   · staysOnBattlefield: true when the card is a permanent (enchantment / artifact /
+//     creature / planeswalker) that remains in play after being cast.
+//   · isOneTimeDraw: true for one-shot effects (cast / etb triggers on instants or
+//     sorceries, or ETB effects that only fire once); false for per-turn effects
+//     (upkeep triggers, opponent_cast triggers, etc.).
+// ─────────────────────────────────────────────────────────────────────────────
+export const processDrawSpell = data => {
+  const cardName = data.name.toLowerCase();
+  const drawData = CARD_DRAW_DATA.get(cardName) || {
+    cardType: 'sorcery',
+    triggerType: 'cast',
+    netCardsDrawn: 1,
+    cardsDiscarded: 0,
+    avgCardsPerTurn: 0,
+  };
+
+  const PERMANENT_TYPES = ['enchantment', 'artifact', 'creature', 'planeswalker'];
+  const isPermanent = PERMANENT_TYPES.includes(drawData.cardType);
+  // ETB on a permanent fires once on entry; cast/etb on instants/sorceries are one-shot.
+  const isOneTimeDraw = drawData.triggerType === 'cast' || drawData.triggerType === 'etb';
+
+  return {
+    name: data.name,
+    type: 'drawSpell',
+    isDrawSpell: true,
+    triggerType: drawData.triggerType,
+    cardDrawType: drawData.cardType,
+    staysOnBattlefield: isPermanent,
+    isOneTimeDraw,
+    // One-shot cards: net cards gained when cast/etb
+    netCardsDrawn: drawData.netCardsDrawn ?? 1,
+    // Per-turn cards: average cards drawn per upkeep (may be fractional, e.g. Rhystic Study)
+    avgCardsPerTurn: drawData.avgCardsPerTurn ?? 0,
+    cmc: calculateCMC(data.cmc, data.mana_cost),
+    manaCost: data.mana_cost || '',
+    oracleText: data.oracle_text,
+  };
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
 // processSpell
 // ─────────────────────────────────────────────────────────────────────────────
 export const processSpell = data => {
@@ -673,5 +717,6 @@ export const processCardData = data => {
   if (EXPLORATION_EFFECTS.has(cardName)) return processExploration(data);
   if (RAMP_SPELL_DATA.has(cardName)) return processRampSpell(data);
   if (RITUAL_DATA.has(cardName)) return processRitual(data);
+  if (CARD_DRAW_DATA.has(cardName)) return processDrawSpell(data);
   return processSpell(data);
 };

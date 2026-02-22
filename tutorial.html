@@ -393,14 +393,14 @@
           </li>
           <li>
             <strong>Ramp spells</strong> — green sorceries / instants (Cultivate, Kodama's Reach,
-            Farseek, Nature's Lore, Skyshroud Claim, Harrow, Boundless Realms, etc.), white
-            catch-up ramp (Tithe, Gift of Estates, Land Tax, Knight of the White Orchid, Loyal
-            Warhound, Oreskos Explorer, Boreas Charger, Archaeomancer's Map, Weathered Wayfarer),
-            and colorless ramp artifacts/creatures (Wayfarer's Bauble, Wanderer's Twig, Expedition
-            Map, Armillary Sphere, Journeyer's Kite, Pilgrim's Eye, Burnished Hart, Solemn
-            Simulacrum). Cast greedily as soon as mana allows; they search the library for lands
-            matching their filter (basic, any, Plains subtype, etc.) and put them onto the
-            battlefield or into hand.
+            Farseek, Nature's Lore, Skyshroud Claim, Harrow, Boundless Realms, etc.), white catch-up
+            ramp (Tithe, Gift of Estates, Land Tax, Knight of the White Orchid, Loyal Warhound,
+            Oreskos Explorer, Boreas Charger, Archaeomancer's Map, Weathered Wayfarer), and
+            colorless ramp artifacts/creatures (Wayfarer's Bauble, Wanderer's Twig, Expedition Map,
+            Armillary Sphere, Journeyer's Kite, Pilgrim's Eye, Burnished Hart, Solemn Simulacrum).
+            Cast greedily as soon as mana allows; they search the library for lands matching their
+            filter (basic, any, Plains subtype, etc.) and put them onto the battlefield or into
+            hand.
           </li>
           <li>
             <strong>Cost reducers</strong> — Emerald Medallion, Goblin Electromancer, Baral Chief of
@@ -412,6 +412,15 @@
           <li>
             <strong>Rituals</strong> — Dark Ritual, Cabal Ritual, Seething Song, etc. These are
             one-shot burst mana sources counted separately in the <em>Burst</em> playability metric.
+          </li>
+          <li>
+            <strong>Draw spells</strong> — Rhystic Study, Mystic Remora, Brainstorm, Ponder, Sylvan
+            Library, Phyrexian Arena, Necropotence, Night's Whisper, Wheel of Fortune, etc. Card
+            draw effects are tracked using the <code>CARD_DRAW_DATA</code> library (115+ supported
+            cards). They are cast after ramp spells each turn. Permanents (enchantments, artifacts,
+            creatures) stay on the battlefield and draw cards each upkeep; instants and sorceries go
+            to the graveyard and draw cards immediately. The per-card draw amount can be overridden
+            in the <em>Draw Spells</em> panel.
           </li>
           <li>
             <strong>Other spells</strong> — everything not in the above categories. They do not
@@ -427,9 +436,11 @@
           non-Commander mode the active player does not draw on their first turn.
         </p>
         <p>
-          The simulator draws exactly one card per turn from the top of the library. Cards drawn by
-          spells (e.g., Harmonize, Rhystic Study, extra-draw effects) are <em>not</em> simulated —
-          only the natural turn draw is modelled.
+          The simulator draws exactly one card per turn from the top of the library. Draw spells on
+          the battlefield (Rhystic Study, Phyrexian Arena, Sylvan Library, etc.) draw additional
+          cards during the upkeep step; one-shot draw spells (Brainstorm, Ponder, Night's Whisper,
+          Harmonize, etc.) draw their cards when cast. The amount drawn can be overridden per-card
+          in the <em>Draw Spells</em> panel.
         </p>
 
         <h3>Land drops</h3>
@@ -446,6 +457,28 @@
           as soon as it can afford the mana cost. This models a "play as fast as possible" strategy
           and may overestimate consistency in lines that require deliberate sequencing decisions.
         </div>
+
+        <h3>Hand size limit</h3>
+        <p>
+          At the <strong>end of each turn</strong> (after all spells are cast and all damage is
+          applied), the simulator enforces the maximum hand size (default: 7 cards). If the hand
+          exceeds the limit, cards are discarded to graveyard using the following heuristic:
+        </p>
+        <ul>
+          <li>
+            <strong>Flood discard</strong> — when the number of lands on the battlefield meets or
+            exceeds the <em>Flood N Lands</em> threshold, lands are discarded from hand first
+            (tapped basics preferred) to model a player discarding dead draws.
+          </li>
+          <li>
+            <strong>Normal / screw discard</strong> — otherwise, the highest-CMC non-land spells are
+            discarded first, mimicking a player keeping low-cost options for future turns.
+          </li>
+        </ul>
+        <p>
+          Adjust <em>Hand Size</em> in Simulation Settings to model effects like Necropotence (which
+          sets your hand size to zero at end step) or Commander rule variants.
+        </p>
 
         <h3>Mana sources and color pip matching</h3>
         <p>
@@ -804,11 +837,11 @@
             mana creatures (Llanowar Elves, …) and Exploration effects are cast in CMC order.
           </li>
           <li>
-            <strong>2 — Ramp spells</strong> — Cultivate, Kodama's Reach, Farseek, and all
-            supported ramp cards (see card categories above) are cast last, after mana producers
-            have resolved, using any available discount from cost reducers. Two special behaviours
-            apply to certain ramp cards:
-            <ul style="margin-top:6px">
+            <strong>2 — Ramp spells</strong> — Cultivate, Kodama's Reach, Farseek, and all supported
+            ramp cards (see card categories above) are cast last, after mana producers have
+            resolved, using any available discount from cost reducers. Two special behaviours apply
+            to certain ramp cards:
+            <ul style="margin-top: 6px">
               <li>
                 <strong>staysOnBattlefield</strong> — creature and enchantment ramp (Solemn
                 Simulacrum, Knight of the White Orchid, Land Tax, etc.) enter the battlefield
@@ -822,6 +855,15 @@
                 committing to the play.
               </li>
             </ul>
+          </li>
+          <li>
+            <strong>3 — Draw spells</strong> — Lowest priority sub-phase. The engine casts draw
+            spells from hand once ramp spells have been resolved. Draw spell permanents (Rhystic
+            Study, Sylvan Library, Phyrexian Arena, etc.) enter the battlefield and will generate
+            card draw each subsequent upkeep; instants and sorceries (Brainstorm, Night's Whisper,
+            Harmonize, Wheel of Fortune, etc.) are cast and immediately draw their
+            <code>netCardsDrawn</code> value. Cards are cast in CMC order and the loop repeats
+            greedily until nothing more is castable.
           </li>
         </ol>
         <p>
@@ -1685,7 +1727,7 @@
           <li>
             Ramp spells searching the library for lands with correct filter restrictions —
             basic-only, Forest/Plains subtype, or any land. Supported categories:
-            <ul style="margin-top:4px">
+            <ul style="margin-top: 4px">
               <li>
                 <strong>Green ramp</strong> — Nature's Lore, Three Visits, Farseek, Rampant Growth,
                 Cultivate, Kodama's Reach, Harrow, Skyshroud Claim, Explosive Vegetation, Hour of
@@ -1701,8 +1743,8 @@
               <li>
                 <strong>Colorless ramp</strong> — Wayfarer's Bauble, Wanderer's Twig, Expedition
                 Map, Armillary Sphere, Journeyer's Kite, Pilgrim's Eye, Burnished Hart, Solemn
-                Simulacrum. Most of these have an <em>activation cost</em> in addition to their
-                cast cost; the engine checks that both can be paid in the same turn before casting.
+                Simulacrum. Most of these have an <em>activation cost</em> in addition to their cast
+                cost; the engine checks that both can be paid in the same turn before casting.
               </li>
             </ul>
           </li>
@@ -2256,6 +2298,22 @@
             cast before mana producers each turn, so their discount applies to everything in the
             same turn. Toggle individual reducers off to measure exactly how much each one
             contributes to your key-card playability.
+          </li>
+          <li>
+            <strong>Model card draw engines.</strong> Cards like Rhystic Study, Sylvan Library,
+            Phyrexian Arena, or Brainstorm appear in the <em>Draw Spells</em> panel after parsing
+            (115+ cards supported). Per-turn draw permanents stay on the battlefield and draw each
+            upkeep; one-shot spells draw immediately on cast. Use the <em>Draw</em> override
+            (one-time or per-turn) to model conditional or partial draw effects — for example, set
+            Rhystic Study to a lower per-turn value to account for opponents paying the
+            <code>{1}</code>.
+          </li>
+          <li>
+            <strong>Hand size enforcement.</strong> The simulator discards down to the configured
+            hand size at end of each turn (default 7). When a flood state is detected (≥ the
+            flood-N-lands threshold) it preferentially discards lands; otherwise it discards the
+            highest-CMC spells first. Adjust the Hand Size setting in Simulation Settings to model
+            Necropotence end-steps or Commander variants with modified limits.
           </li>
           <li>
             <strong>Click play sequences.</strong> In the Key-Card results panel, each turn bar is

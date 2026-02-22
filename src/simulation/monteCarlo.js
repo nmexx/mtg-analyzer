@@ -45,6 +45,7 @@ import {
   tapManaSources,
   calculateBattlefieldDamage,
   calculateCostDiscount,
+  enforceHandSizeLimit,
 } from './simulationCore.js';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -99,6 +100,36 @@ const applyManaOverrides = (deck, manaOverrides) => {
   });
 };
 
+/**
+ * Apply per-card draw amount overrides from the UI.
+ * mode='onetime'  → override isOneTimeDraw=true, netCardsDrawn=amount
+ * mode='perturn'  → override isOneTimeDraw=false, avgCardsPerTurn=amount
+ */
+const applyDrawOverrides = (deck, drawOverrides) => {
+  if (!drawOverrides || Object.keys(drawOverrides).length === 0) return deck;
+  return deck.map(card => {
+    if (!card.isDrawSpell) return card;
+    const override = drawOverrides[card.name?.toLowerCase()];
+    if (!override || override.mode === 'default') return card;
+    if (override.mode === 'onetime') {
+      return {
+        ...card,
+        isOneTimeDraw: true,
+        staysOnBattlefield: false,
+        netCardsDrawn: Math.max(0, override.amount ?? card.netCardsDrawn ?? 1),
+      };
+    } else if (override.mode === 'perturn') {
+      return {
+        ...card,
+        isOneTimeDraw: false,
+        staysOnBattlefield: true,
+        avgCardsPerTurn: Math.max(0, override.amount ?? card.avgCardsPerTurn ?? 1),
+      };
+    }
+    return card;
+  });
+};
+
 export const buildCompleteDeck = (deckToParse, config = {}) => {
   if (!deckToParse) return [];
   const {
@@ -114,7 +145,10 @@ export const buildCompleteDeck = (deckToParse, config = {}) => {
     disabledRituals = new Set(),
     includeCostReducers = true,
     disabledCostReducers = new Set(),
+    includeDrawSpells = true,
+    disabledDrawSpells = new Set(),
     manaOverrides = {},
+    drawOverrides = {},
   } = config;
 
   const deck = [];
@@ -129,12 +163,13 @@ export const buildCompleteDeck = (deckToParse, config = {}) => {
   if (includeRampSpells) pushFiltered(deck, deckToParse.rampSpells, disabledRampSpells);
   if (includeRituals) pushFiltered(deck, deckToParse.rituals, disabledRituals);
   if (includeCostReducers) pushFiltered(deck, deckToParse.costReducers, disabledCostReducers);
+  if (includeDrawSpells) pushFiltered(deck, deckToParse.drawSpells, disabledDrawSpells);
 
   deckToParse.spells.forEach(card => {
     for (let i = 0; i < card.quantity; i++) deck.push({ ...card });
   });
 
-  return applyManaOverrides(deck, manaOverrides);
+  return applyDrawOverrides(applyManaOverrides(deck, manaOverrides), drawOverrides);
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -158,6 +193,8 @@ export const monteCarlo = (deckToParse, config = {}) => {
     disabledRampSpells = new Set(),
     includeCostReducers = true,
     disabledCostReducers = new Set(),
+    includeDrawSpells = true,
+    disabledDrawSpells = new Set(),
     floodNLands = 5,
     floodTurn = 5,
     screwNLands = 2,
@@ -171,6 +208,8 @@ export const monteCarlo = (deckToParse, config = {}) => {
     disabledRampSpells,
     includeCostReducers,
     disabledCostReducers,
+    includeDrawSpells,
+    disabledDrawSpells,
   };
 
   const results = {
@@ -223,6 +262,7 @@ export const monteCarlo = (deckToParse, config = {}) => {
     ...deckToParse.creatures,
     ...(deckToParse.artifacts || []),
     ...(deckToParse.rampSpells || []),
+    ...(deckToParse.drawSpells || []),
     ...(deckToParse.exploration || []),
   ];
   const keyCardMap = new Map(
@@ -337,6 +377,26 @@ export const monteCarlo = (deckToParse, config = {}) => {
       });
       turnLog.lifeLoss += manaVaultDamage;
       cumulativeLifeLoss += manaVaultDamage;
+
+      // Upkeep — per-turn draw effects from draw spell permanents on battlefield
+      if (includeDrawSpells) {
+        battlefield.forEach(p => {
+          const card = p.card;
+          if (!card.isDrawSpell || card.isOneTimeDraw) return;
+          if (disabledDrawSpells.has(card.name)) return;
+          const perTurn = card.avgCardsPerTurn || 0;
+          if (perTurn <= 0) return;
+          const full = Math.floor(perTurn);
+          const frac = Math.random() < perTurn - full ? 1 : 0;
+          const toDraw = full + frac;
+          for (let d = 0; d < toDraw && library.length > 0; d++) {
+            hand.push(library.shift());
+          }
+          if (toDraw > 0) {
+            turnLog.actions.push(`${card.name}: drew ${toDraw} card${toDraw !== 1 ? 's' : ''}`);
+          }
+        });
+      }
 
       // Draw
       const shouldDraw = turn > 0 || commanderMode;
@@ -524,6 +584,9 @@ export const monteCarlo = (deckToParse, config = {}) => {
         turnLog.lifeLoss += battlefieldDmg;
         battlefieldDmgLog.forEach(msg => turnLog.actions.push(msg));
       }
+
+      // End of turn: enforce hand size limit (discard to max 7)
+      enforceHandSizeLimit(hand, graveyard, handSize, battlefield, floodNLands, turnLog);
 
       turnActions.push(turnLog);
 

@@ -13,12 +13,7 @@
 import React from 'react';
 import CardTooltip from './CardTooltip';
 
-const SpellsPanel = ({
-  parsedDeck,
-  selectedKeyCards,
-  setSelectedKeyCards,
-  renderManaCost,
-}) => {
+const SpellsPanel = ({ parsedDeck, selectedKeyCards, setSelectedKeyCards, renderManaCost }) => {
   if (!parsedDeck) return null;
 
   const hasAny =
@@ -27,6 +22,7 @@ const SpellsPanel = ({
     parsedDeck.artifacts.length > 0 ||
     parsedDeck.rituals?.length > 0 ||
     parsedDeck.rampSpells?.length > 0 ||
+    parsedDeck.drawSpells?.length > 0 ||
     parsedDeck.exploration?.length > 0;
 
   if (!hasAny) return null;
@@ -35,15 +31,16 @@ const SpellsPanel = ({
     ...parsedDeck.spells,
     ...parsedDeck.creatures,
     ...parsedDeck.artifacts,
-    ...(parsedDeck.rituals    || []),
+    ...(parsedDeck.rituals || []),
     ...(parsedDeck.rampSpells || []),
+    ...(parsedDeck.drawSpells || []),
     ...(parsedDeck.exploration || []),
   ].sort((a, b) => a.cmc - b.cmc);
 
-  const toggle = (name) => {
+  const toggle = name => {
     const newSet = new Set(selectedKeyCards);
     if (newSet.has(name)) newSet.delete(name);
-    else                  newSet.add(name);
+    else newSet.add(name);
     setSelectedKeyCards(newSet);
   };
 
@@ -60,12 +57,14 @@ const SpellsPanel = ({
         >
           <div className="card-row-label">
             <input type="checkbox" checked={selectedKeyCards.has(card.name)} readOnly />
-            <CardTooltip name={card.name}><span className="spell-card-name">{card.quantity}x {card.name}</span></CardTooltip>
+            <CardTooltip name={card.name}>
+              <span className="spell-card-name">
+                {card.quantity}x {card.name}
+              </span>
+            </CardTooltip>
             <span className="card-meta">CMC {card.cmc}</span>
           </div>
-          <div className="mana-cost-container">
-            {renderManaCost(card.manaCost)}
-          </div>
+          <div className="mana-cost-container">{renderManaCost(card.manaCost)}</div>
         </div>
       ))}
     </div>

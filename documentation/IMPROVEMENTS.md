@@ -158,10 +158,10 @@
 
 ## New — Simulation Accuracy (Code-Audit Findings)
 
-26. **Hand size limit not enforced** `[Low]`
+26. **Hand size limit not enforced** --------DONE
     - The simulation never discards down to 7 cards at end of turn.
     - Ramp spells that put lands into hand (`landsToHand`) and normal draws can push hand size above 7 indefinitely, inflating key-card playability probabilities on longer-turn runs.
-    - Fix: after casting spells each turn, discard excess cards (preferring lands if flooded, spells if screwed).
+    - Fix: after casting spells and calculating battlefield damage each turn, `enforceHandSizeLimit` discards excess cards (lands first if flooded, highest-CMC spells first otherwise). Hand size is configurable in Simulation Settings.
 
 27. **Chrome Mox / Mox Diamond imprint/discard ignores key cards** `[Low]`
     - `castSpells` always imprints `nonLandsInHand[0]` and discards the first available land for Mox Diamond with no awareness of which cards are tracked key cards.

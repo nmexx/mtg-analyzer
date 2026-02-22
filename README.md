@@ -108,6 +108,10 @@ Each mana-producing category can be enabled/disabled wholesale or per-card:
   - **Colorless ramp** (Wayfarer's Bauble, Wanderer's Twig, Expedition Map, Armillary Sphere, Journeyer's Kite, Pilgrim's Eye, Burnished Hart, Solemn Simulacrum) — artifact/creature ramp that requires an activation cost on top of the cast cost; the engine verifies `cast cost + activation cost ≤ available mana` before playing
 - **Rituals** (Dark Ritual, Cabal Ritual, etc.)
 - **Cost Reducers** (Emerald Medallion, Goblin Electromancer, Baral, Helm of Awakening, Urza's Incubator, etc.) — reduce the generic portion of matching spell costs; cast before mana producers each turn so their discount applies to everything else in the turn; discounts stack
+- **Draw Spells** (115+ cards supported, powered by `card_data/Card_Draw.js`):
+  - **Per-turn permanents** — Rhystic Study, Mystic Remora, Phyrexian Arena, Sylvan Library, Necropotence, Azami Lady of Scrolls, Howling Mine, Font of Mythos, Dark Prophecy, etc. — these stay on the battlefield and draw cards each upkeep (`avgCardsPerTurn`, may be fractional). The amount drawn can be overridden per-card.
+  - **One-shot spells** — Brainstorm, Ponder, Preordain, Night's Whisper, Harmonize, Wheel of Fortune, Windfall, Concentration, Distant Visions, etc. — cast from hand and draw their `netCardsDrawn` immediately, then go to the graveyard.
+  - **Override modes**: default (from card data), one-time draw (fixed amount), per-turn draw (fixed per-upkeep). Use this to model conditional draws like Rhystic Study at a lower rate when opponents pay the `{1}`.
 
 ### Key Card Selection
 - Mark any non-land spell as a **key card** to track its castability turn by turn
@@ -120,11 +124,12 @@ Each mana-producing category can be enabled/disabled wholesale or per-card:
 ### Simulation Engine
 - Configurable **iteration count** (default 10,000; range 1,000–100,000)
 - Configurable **number of turns** to simulate (default 7; up to 15)
-- Configurable **opening hand size** (default 7)
+- Configurable **opening hand size** / **maximum hand size** (default 7) — at end of each turn the engine discards down to this limit; flood state → discard lands first; normal/screw → discard highest-CMC spells first
 - Configurable **maximum play sequences** to record per turn for the sequence explorer
 - **Commander Mode** — switches to a 100-card singleton ruleset; draws on turn 1; enables crowd-land untapped logic for multiplayer
 - Full per-turn statistics with **standard deviations** for every numeric output
 - Bipartite colour-pip matching ensures a card's specific colour requirements are verified against distinct mana sources — not just total mana
+- **Cast order within Phase 6**: (0) cost reducers → (1) mana producers (artifacts+creatures+exploration) → (2) ramp spells → (3) draw spells; each sub-phase loops greedily until nothing more can be cast
 
 ### Flood & Screw Tracking
 - **Mana flood rate** — percentage of games where the battlefield has ≥ N lands by turn T

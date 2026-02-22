@@ -22,6 +22,7 @@ import ExplorationPanel from './components/ExplorationPanel.jsx';
 import RampSpellsPanel from './components/RampSpellsPanel.jsx';
 import RitualsPanel from './components/RitualsPanel.jsx';
 import CostReducersPanel from './components/CostReducersPanel.jsx';
+import DrawSpellsPanel from './components/DrawSpellsPanel.jsx';
 import SpellsPanel from './components/SpellsPanel.jsx';
 import SimulationSettingsPanel from './components/SimulationSettingsPanel.jsx';
 import ResultsPanel from './components/ResultsPanel.jsx';
@@ -97,6 +98,9 @@ const defaultDeckSlot = (saved = {}) => ({
   disabledRituals: new Set(saved.disabledRituals ?? []),
   includeCostReducers: saved.includeCostReducers ?? true,
   disabledCostReducers: new Set(saved.disabledCostReducers ?? []),
+  includeDrawSpells: saved.includeDrawSpells ?? true,
+  disabledDrawSpells: new Set(saved.disabledDrawSpells ?? []),
+  drawOverrides: saved.drawOverrides ?? {},
   simulationResults: null,
 });
 
@@ -116,6 +120,9 @@ const serializeDeckSlot = slot => ({
   disabledRituals: [...slot.disabledRituals],
   includeCostReducers: slot.includeCostReducers,
   disabledCostReducers: [...slot.disabledCostReducers],
+  includeDrawSpells: slot.includeDrawSpells,
+  disabledDrawSpells: [...(slot.disabledDrawSpells ?? [])],
+  drawOverrides: slot.drawOverrides ?? {},
 });
 
 // =============================================================================
@@ -128,6 +135,7 @@ const hasCastables = deck =>
     deck.artifacts.length > 0 ||
     deck.rituals?.length > 0 ||
     deck.rampSpells?.length > 0 ||
+    deck.drawSpells?.length > 0 ||
     deck.exploration?.length > 0);
 
 // Scryfall API usage limits per browser session.
@@ -185,6 +193,9 @@ const MTGMonteCarloAnalyzer = () => {
   const setManaOverrides = makeSlotSetterA('manaOverrides');
   const setIncludeCostReducers = makeSlotSetterA('includeCostReducers');
   const setDisabledCostReducers = makeSlotSetterA('disabledCostReducers');
+  const setIncludeDrawSpells = makeSlotSetterA('includeDrawSpells');
+  const setDisabledDrawSpells = makeSlotSetterA('disabledDrawSpells');
+  const setDrawOverrides = makeSlotSetterA('drawOverrides');
 
   const {
     deckText,
@@ -204,6 +215,9 @@ const MTGMonteCarloAnalyzer = () => {
     manaOverrides,
     includeCostReducers,
     disabledCostReducers,
+    includeDrawSpells,
+    disabledDrawSpells,
+    drawOverrides,
   } = deckSlotA;
 
   // ── Deck Slot B ───────────────────────────────────────────────────────────
@@ -227,6 +241,9 @@ const MTGMonteCarloAnalyzer = () => {
   const setManaOverridesB = makeSlotSetterB('manaOverrides');
   const setIncludeCostReducersB = makeSlotSetterB('includeCostReducers');
   const setDisabledCostReducersB = makeSlotSetterB('disabledCostReducers');
+  const setIncludeDrawSpellsB = makeSlotSetterB('includeDrawSpells');
+  const setDisabledDrawSpellsB = makeSlotSetterB('disabledDrawSpells');
+  const setDrawOverridesB = makeSlotSetterB('drawOverrides');
 
   const {
     deckText: deckTextB,
@@ -246,6 +263,9 @@ const MTGMonteCarloAnalyzer = () => {
     manaOverrides: manaOverridesB,
     includeCostReducers: includeCostReducersB,
     disabledCostReducers: disabledCostReducersB,
+    includeDrawSpells: includeDrawSpellsB,
+    disabledDrawSpells: disabledDrawSpellsB,
+    drawOverrides: drawOverridesB,
   } = deckSlotB;
 
   const [error, setError] = useState('');
@@ -550,6 +570,9 @@ const MTGMonteCarloAnalyzer = () => {
     manaOverrides: slot.manaOverrides,
     includeCostReducers: slot.includeCostReducers,
     disabledCostReducers: slot.disabledCostReducers,
+    includeDrawSpells: slot.includeDrawSpells ?? true,
+    disabledDrawSpells: slot.disabledDrawSpells ?? new Set(),
+    drawOverrides: slot.drawOverrides ?? {},
   });
 
   const runSimulation = () => {
@@ -1047,11 +1070,33 @@ const MTGMonteCarloAnalyzer = () => {
                 </details>
               )}
 
+              {parsedDeck.drawSpells?.length > 0 && (
+                <details className="section-details" open>
+                  <summary className="section-summary">
+                    📖 Draw Spells
+                    <span className="section-summary__chevron">▾</span>
+                  </summary>
+                  <div className="panel-grid">
+                    <DrawSpellsPanel
+                      parsedDeck={parsedDeck}
+                      includeDrawSpells={includeDrawSpells}
+                      setIncludeDrawSpells={setIncludeDrawSpells}
+                      disabledDrawSpells={disabledDrawSpells}
+                      setDisabledDrawSpells={setDisabledDrawSpells}
+                      renderManaCost={renderManaCost}
+                      drawOverrides={drawOverrides}
+                      setDrawOverrides={setDrawOverrides}
+                    />
+                  </div>
+                </details>
+              )}
+
               {(parsedDeck.spells.length > 0 ||
                 parsedDeck.creatures.length > 0 ||
                 parsedDeck.artifacts.length > 0 ||
                 parsedDeck.rituals?.length > 0 ||
                 parsedDeck.rampSpells?.length > 0 ||
+                parsedDeck.drawSpells?.length > 0 ||
                 parsedDeck.exploration?.length > 0) && (
                 <details className="section-details" open>
                   <summary className="section-summary">
@@ -1376,6 +1421,38 @@ const MTGMonteCarloAnalyzer = () => {
                   disabledCostReducers={disabledCostReducersB}
                   setDisabledCostReducers={setDisabledCostReducersB}
                   renderManaCost={renderManaCost}
+                />
+              ) : null
+            }
+          />
+
+          {/* Row: Draw Spells */}
+          <ComparisonRow
+            left={
+              parsedDeck?.drawSpells?.length > 0 ? (
+                <DrawSpellsPanel
+                  parsedDeck={parsedDeck}
+                  includeDrawSpells={includeDrawSpells}
+                  setIncludeDrawSpells={setIncludeDrawSpells}
+                  disabledDrawSpells={disabledDrawSpells}
+                  setDisabledDrawSpells={setDisabledDrawSpells}
+                  renderManaCost={renderManaCost}
+                  drawOverrides={drawOverrides}
+                  setDrawOverrides={setDrawOverrides}
+                />
+              ) : null
+            }
+            right={
+              parsedDeckB?.drawSpells?.length > 0 ? (
+                <DrawSpellsPanel
+                  parsedDeck={parsedDeckB}
+                  includeDrawSpells={includeDrawSpellsB}
+                  setIncludeDrawSpells={setIncludeDrawSpellsB}
+                  disabledDrawSpells={disabledDrawSpellsB}
+                  setDisabledDrawSpells={setDisabledDrawSpellsB}
+                  renderManaCost={renderManaCost}
+                  drawOverrides={drawOverridesB}
+                  setDrawOverrides={setDrawOverridesB}
                 />
               ) : null
             }
